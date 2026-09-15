@@ -1,0 +1,231 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="系統架構圖(三節點 + Redis)">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1120" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="vm1" value="VM-1(Ampere A1,1 OCPU / 6GB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="280" width="300" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="vm2" value="VM-2(Ampere A1,1 OCPU / 6GB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="460" width="300" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="vm3" value="VM-3(Ampere A1,2 OCPU / 12GB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="260" width="280" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="app" value="手機 App
+(iOS / Android)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="20" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="web" value="Web App" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="20" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cam" value="鏡頭裝置" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="640" y="20" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lb" value="Oracle Flexible Load Balancer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="140" width="380" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pages" value="Cloudflare Pages
+(Web 前端靜態檔)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="140" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="apiA" value="API 服務複本
+Auth / Device / Event / Stream 訊令 / Push / Media / Album" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="apiB" value="API 服務複本
+Auth / Device / Event / Stream 訊令 / Push / Media / Album" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="500" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="worker" value="事件偵測 Worker
+(單例)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="320" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pg" value="Postgres
+(單例,不複寫)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="460" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis
+(單例,VCN 內部,不對外開放)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="600" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="turn" value="TURN Server
+(單例)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="740" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" value="Cloudflare R2
+(影片/縮圖)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1040" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="push" value="FCM / APNs / Web Push" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1040" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="drive" value="Google Drive" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1040" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="HTTPS / WebRTC signaling" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.3333;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="app" target="lb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="HTTPS / WebRTC signaling" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.6667;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="web" target="lb">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420.0" y="110" />
+              <mxPoint x="333.346" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" value="RTSP 攝影機串流(直連 VM-3,非經 LB)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="cam" target="worker">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="920" y="50.0" />
+              <mxPoint x="920" y="360.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" value="輪詢分流" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.3333;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.2;entryDx=0;entryDy=0;" edge="1" parent="1" source="lb" target="apiA">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="206.654" y="250" />
+              <mxPoint x="-200" y="250" />
+              <mxPoint x="-200" y="336.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" value="輪詢分流" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.6667;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="lb" target="apiB">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="333.346" y="220" />
+              <mxPoint x="505.0" y="220" />
+              <mxPoint x="505.0" y="520.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="VCN 私有網路(跨機)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=1;exitY=0.3333;exitDx=0;exitDy=0;entryX=0;entryY=0.3333;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiA" target="pg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="460.0" y="346.664" />
+              <mxPoint x="460.0" y="486.664" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="寫入 events / media_items(同機)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="worker" target="pg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="VCN 私有網路(跨機)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.6667;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiB" target="pg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400.0" y="540.0" />
+              <mxPoint x="400.0" y="513.336" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="VCN 私有網路(跨機,Stream/Push 存取)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=1;exitY=0.6667;exitDx=0;exitDy=0;entryX=0;entryY=0.3333;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiA" target="redis">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490.0" y="373.336" />
+              <mxPoint x="490.0" y="626.664" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" value="VCN 私有網路(跨機,Stream/Push 存取)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.6667;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiB" target="redis">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430.0" y="560.0" />
+              <mxPoint x="430.0" y="653.336" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="上傳影片/縮圖" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="worker" target="r2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520.0" y="360.0" />
+              <mxPoint x="520.0" y="1000" />
+              <mxPoint x="90.0" y="1000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" value="上傳/下載(presigned URL)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.4;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiA" target="r2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-110" y="352.0" />
+              <mxPoint x="-110" y="925" />
+              <mxPoint x="140.0" y="925" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" value="上傳/下載(presigned URL)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiB" target="r2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-20" y="520.0" />
+              <mxPoint x="-20" y="850" />
+              <mxPoint x="190.0" y="850" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" value="推播" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.6;exitDx=0;exitDy=0;entryX=0.3333;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiA" target="push">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-140" y="368.0" />
+              <mxPoint x="-140" y="950" />
+              <mxPoint x="373.326" y="950" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e14" value="推播" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.6667;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiB" target="push">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-50" y="540.0" />
+              <mxPoint x="-50" y="875" />
+              <mxPoint x="446.674" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" value="OAuth + 上傳" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.8;exitDx=0;exitDy=0;entryX=0.3333;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiA" target="drive">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-170" y="384.0" />
+              <mxPoint x="-170" y="975" />
+              <mxPoint x="626.66" y="975" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" value="OAuth + 上傳" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0.6667;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="apiB" target="drive">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-80" y="560.0" />
+              <mxPoint x="-80" y="900" />
+              <mxPoint x="693.34" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e17" value="WebRTC media relay(直連,不經 LB)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.3333;entryDx=0;entryDy=0;" edge="1" parent="1" source="app" target="turn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180.0" y="-50" />
+              <mxPoint x="1000" y="-50" />
+              <mxPoint x="1000" y="766.664" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" value="WebRTC media relay(直連,不經 LB)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.6667;entryDx=0;entryDy=0;" edge="1" parent="1" source="web" target="turn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420.0" y="-20" />
+              <mxPoint x="960" y="-20" />
+              <mxPoint x="960" y="793.336" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e19" value="載入前端(HTML/JS/CSS)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="web" target="pages">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="50.0" />
+              <mxPoint x="560" y="170.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
