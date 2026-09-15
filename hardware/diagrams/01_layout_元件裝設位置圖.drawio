@@ -1,0 +1,93 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="硬體元件裝設位置圖">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1140" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="zoneHead" value="鏡頭頭部
+(隨雲台旋轉)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="0" width="700" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="zonePT" value="雲台關節" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="320" width="300" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="zoneBody" value="機身/底座" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="560" width="760" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="zoneFeeder" value="餵食機構艙(獨立料桶單元)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="880" width="760" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="irL" value="IR LED 陣列(左)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="140" y="60" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cam" value="相機模組
+(CSI,自動對焦)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="340" y="60" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="irR" value="IR LED 陣列(右)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="580" y="60" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mic" value="麥克風
+(I2S MEMS)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="140" y="160" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ircut" value="IR-CUT 切換模組
+(相機後方)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="350" y="160" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="spk" value="喇叭 + I2S 功放" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="560" y="160" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tilt" value="俯仰步進馬達
++ULN2003 驅動板" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="380" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pan" value="水平步進馬達
++ULN2003 驅動板" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="460" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mcu" value="主控板
+(開發板/量產板)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="620" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="psu" value="電源輸入
+(5V/3A Type-C)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="620" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="led" value="狀態指示燈(LED)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="620" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="sd" value="microSD 插槽
+(A2 32GB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="700" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="net4g" value="4G 備援網卡
+(Demo 用,USB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="700" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="gpio" value="GPIO 排針
+(I2C 練習模組)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="700" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hopper" value="料桶(飼料儲存)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="940" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="servo" value="SG90 伺服馬達
+(閘門)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="940" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dcdrv" value="L298N 驅動板
++出料直流馬達" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="940" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="photo" value="光遮斷器
+(出料計數)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="1020" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="chute" value="出料口/落料槽" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1020" width="200" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
