@@ -3,6 +3,7 @@
 飼主外出時也能掌握寵物在家狀況的智慧寵物攝影機。提供即時畫面查看、寵物活動自動偵測錄影、推播通知與事件時間軸回顧，讓使用者不用一直盯著直播畫面也能掌握寵物動態。
 
 > 目前專案階段:**設計/規劃期** — 需求、規格、資料模型與介面合約皆已完成，正在進行 UI 設計(Figma)與硬體採購。
+figma: https://www.figma.com/design/m90ohbl7tjMW7ZqmUqan1M/Pet-Camera?node-id=2051-3&t=TrXZUA3jL90liymb-1
 
 ---
 
