@@ -125,3 +125,10 @@ def test_reversed_range_is_rejected():
     """to 早於 from 只會回空列表,對使用者來說是無聲的錯誤,不如直接擋下。"""
     with pytest.raises(InvalidDateFilter):
         DateRange.resolve(started_from=1758423600, started_to=1758337200)
+
+
+@pytest.mark.parametrize("value", [10**20, -(10**20)])
+def test_out_of_range_timestamps_are_rejected(value):
+    """超出 datetime 可表示範圍的 timestamp 是輸入錯誤(400),不是 500。"""
+    with pytest.raises(InvalidDateFilter):
+        DateRange.resolve(started_from=value)

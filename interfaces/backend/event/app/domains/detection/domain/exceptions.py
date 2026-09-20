@@ -22,3 +22,12 @@ class UploadFailed(ServiceUnavailable):
     """
 
     code = "EVENT_001"
+
+
+class CameraDisconnected(ServiceUnavailable):
+    """鏡頭斷線
+
+    EVENT_003 的成因。錄影中發生時,已錄製的部分仍照常上傳並標記 is_partial。
+    """
+
+    code = "EVENT_003"

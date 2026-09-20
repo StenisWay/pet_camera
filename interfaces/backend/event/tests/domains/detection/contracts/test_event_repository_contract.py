@@ -4,7 +4,7 @@
 fake 上,fake 的行為若與 SQLAlchemy 版不同(例如 get 回傳同一個物件、修改不用 save
 就生效),application 測試會綠燈但上線出錯。
 
-目前只跑 fake;正式實作寫好後把 "sqlalchemy" 加進 params,同一份測試自動套用。
+開發時 `pytest -m "not integration"` 只跑 fake;CI 兩個實作都跑。
 """
 
 from collections.abc import Callable
@@ -14,18 +14,23 @@ import pytest
 
 from app.domains.detection.application.ports import DetectionUnitOfWork
 from app.domains.detection.domain.entities import Event, EventStatus, UploadedMedia
+from app.domains.detection.infrastructure.unit_of_work import (
+    SqlAlchemyDetectionUnitOfWork,
+)
 from tests.domains.detection.builders import DEVICE, EVENT, OTHER_DEVICE, at
 from tests.domains.detection.fakes import FakeDetectionUnitOfWork
 
 UowFactory = Callable[[], DetectionUnitOfWork]
 
 
-@pytest.fixture(params=["fake"])
+@pytest.fixture(params=["fake", pytest.param("sqlalchemy", marks=pytest.mark.integration)])
 def uow_factory(request) -> UowFactory:
     if request.param == "fake":
         shared = FakeDetectionUnitOfWork()  # 同一個實例 = 同一個「資料庫」
         return lambda: shared
-    raise AssertionError(f"未知的實作:{request.param}")
+    # 延遲取得資料庫 fixture:只跑 fake 時完全不需要 PostgreSQL
+    session_factory = request.getfixturevalue("session_factory")
+    return lambda: SqlAlchemyDetectionUnitOfWork(session_factory)
 
 
 def an_event(*, id=EVENT, device_id=DEVICE) -> Event:

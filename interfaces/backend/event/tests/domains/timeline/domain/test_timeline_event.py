@@ -98,3 +98,26 @@ def test_read_flag_can_be_set_both_ways(target):
     event.mark_read(target)
 
     assert event.is_read is target
+
+
+def test_playable_video_key_returns_the_key_when_allowed():
+    """可播放性與「key 存在」是同一件事,所以直接回傳 key,呼叫端不必再檢查 None。"""
+    event = a_timeline_event()
+
+    assert event.playable_video_key(STARTED + days(1)) == event.video_object_key
+
+
+def test_playable_video_key_raises_the_same_way_as_ensure_playable():
+    event = a_timeline_event(status=EventStatus.PROCESSING)
+
+    with pytest.raises(EventNotReady):
+        event.playable_video_key(STARTED + days(1))
+
+
+@pytest.mark.parametrize(("age", "has_key"), [(days(1), True), (days(31), False)])
+def test_thumbnail_key_is_none_once_it_expires(age, has_key):
+    event = a_timeline_event()
+
+    key = event.thumbnail_key_if_available(STARTED + age)
+
+    assert (key is not None) is has_key

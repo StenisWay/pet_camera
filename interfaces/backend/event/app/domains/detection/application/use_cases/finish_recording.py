@@ -125,6 +125,8 @@ class FinishRecording:
                 device_id=event.device_id,
                 event_id=event.id,
                 confidence_score=event.confidence_score,
+                thumbnail_object_key=event.thumbnail_object_key,
+                started_at=event.started_at,
             )
         except Exception:  # noqa: BLE001 — Push 的任何故障都不該影響事件本身
             pass

@@ -10,6 +10,14 @@ from app.domains.detection.domain.recording import RecordingSession, StopReason
 
 
 @dataclass(frozen=True)
+class EncodedClip:
+    """ffmpeg 的產物,交給 FinishRecording 上傳。"""
+
+    video: bytes
+    thumbnail: bytes
+
+
+@dataclass(frozen=True)
 class FinishRecordingCommand:
     session: RecordingSession
     video: bytes

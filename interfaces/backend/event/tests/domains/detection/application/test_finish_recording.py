@@ -111,10 +111,23 @@ async def test_both_video_and_thumbnail_are_uploaded_with_the_naming_rule(use_ca
 
 
 async def test_push_is_triggered_only_after_the_event_is_ready(use_case, uow, notifier):
-    """§3.6:status = ready 後才觸發推播。"""
+    """§3.6:status = ready 後才觸發推播。
+
+    body 的形狀對應 Push 服務的 EventReadyNotification(push/__init__.py):
+    夾帶縮圖 key 與 started_at,但**不夾帶裝置名稱**——那是 Device 的資料,
+    由 Push 自己取即時值,使用者剛改過的鏡頭名稱才會反映在通知標題上。
+    """
     await use_case.execute(a_command(peak=Decimal("0.95")))
 
-    assert notifier.sent == [(DEVICE, EVENT, Decimal("0.95"))]
+    assert notifier.sent == [
+        {
+            "device_id": DEVICE,
+            "event_id": EVENT,
+            "confidence_score": Decimal("0.95"),
+            "thumbnail_object_key": f"thumbnails/{DEVICE}/2026/09/20/{EVENT}.jpg",
+            "started_at": at(0),
+        }
+    ]
 
 
 async def test_upload_is_retried_up_to_three_times(uow, backoff, notifier):

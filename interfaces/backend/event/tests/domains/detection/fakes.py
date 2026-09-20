@@ -5,6 +5,7 @@ fake 的行為由合約測試保證與 SQLAlchemy 版一致。
 """
 
 import copy
+from datetime import datetime
 from decimal import Decimal
 from types import TracebackType
 from typing import Self
@@ -112,14 +113,28 @@ class FakeMediaUploader(MediaUploader):
 class FakePushNotifier(PushNotifier):
     def __init__(self, *, fails: bool = False) -> None:
         self.fails = fails
-        self.sent: list[tuple[UUID, UUID, Decimal]] = []
+        self.sent: list[dict[str, object]] = []
 
     async def notify_event_ready(
-        self, *, device_id: UUID, event_id: UUID, confidence_score: Decimal
+        self,
+        *,
+        device_id: UUID,
+        event_id: UUID,
+        confidence_score: Decimal,
+        thumbnail_object_key: str | None,
+        started_at: datetime,
     ) -> None:
         if self.fails:
             raise ConnectionError("push service unreachable")
-        self.sent.append((device_id, event_id, confidence_score))
+        self.sent.append(
+            {
+                "device_id": device_id,
+                "event_id": event_id,
+                "confidence_score": confidence_score,
+                "thumbnail_object_key": thumbnail_object_key,
+                "started_at": started_at,
+            }
+        )
 
 
 class NoWaitBackoff(Backoff):

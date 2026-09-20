@@ -80,7 +80,9 @@ def test_disconnected_recording_is_ready_but_partial():
     assert event.duration_sec == 7  # 反映實際長度,不是原本預期的長度
 
 
-@pytest.mark.parametrize("finalise", [lambda e: e.mark_failed(), lambda e: e.mark_ready(uploaded())])
+@pytest.mark.parametrize(
+    "finalise", [lambda e: e.mark_failed(), lambda e: e.mark_ready(uploaded())]
+)
 def test_a_finalised_event_cannot_be_finalised_again(finalise):
     """重試或重複投遞不該改寫已經定案的結果。"""
     event = a_new_event()

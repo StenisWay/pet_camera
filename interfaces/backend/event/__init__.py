@@ -24,7 +24,7 @@ tests/test_contract.py 驗證兩者不會走樣。實體是純 dataclass,與 SQL
   而 failed 的語意是「沒有可播放內容」,不能拿來表達「可播放但不完整」。
 - 新增 DeviceOwnership port:events 沒有 user_id,原介面無法驗證擁有者,等於任何
   登入者都能讀取與播放他人的寵物影片(IDOR)。非本人一律回 404,不洩漏存在性。
-- delete_all_by_device 改為回傳被刪事件的 R2 object key,並由本服務自己清除物件——
+- delete_all_by_device 改為回傳刪除筆數與 R2 object key,並由本服務自己清除物件——
   原註解要求呼叫端(Device 服務)刪 R2,但它不知道 event_id,組不出 key。
 - create_processing / mark_ready / mark_failed 這類「直接改欄位」的方法收進 Event 實體,
   repository 只負責 get / save 聚合,不提供繞過業務規則的欄位級更新。
@@ -170,6 +170,14 @@ class StopReason(StrEnum):
     DISCONNECTED = "disconnected"  # 鏡頭斷線,片段不完整(is_partial=true)
 
 
+@dataclass(frozen=True)
+class PurgedEvents:
+    """串聯清除的結果(見 EventRepository.delete_all_by_device)。"""
+
+    deleted_count: int
+    object_keys: list[str]
+
+
 class EventRepository(ABC):
     """以聚合為單位的存取。列表查詢不在這裡,見 TimelineQueries。"""
 
@@ -182,12 +190,15 @@ class EventRepository(ABC):
         """新增或更新整個聚合。實際寫入在 UnitOfWork.commit() 時生效。"""
 
     @abstractmethod
-    async def delete_all_by_device(self, device_id: uuid.UUID) -> list[str]:
-        """刪除該裝置所有事件,回傳被刪事件對應的 R2 object key(影片 + 縮圖)。
+    async def delete_all_by_device(self, device_id: uuid.UUID) -> "PurgedEvents":
+        """刪除該裝置所有事件,回傳刪除筆數與對應的 R2 object key(影片 + 縮圖)。
 
         由 Device 服務在移除裝置時透過 DELETE /internal/devices/{device_id}/events
         觸發(01_資料模型與儲存規格.md 第 6 節)。R2 物件由本服務清除,不是呼叫端——
         key 需要 event_id 與事件日期,Device 服務組不出來。
+
+        筆數與 key 不是同一件事:processing / failed 的事件沒有任何 object key,
+        只回傳 key 的話就數不出真正刪了幾筆,而內部端點要回報的是筆數。
         """
 
 

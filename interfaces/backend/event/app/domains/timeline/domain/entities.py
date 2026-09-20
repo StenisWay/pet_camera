@@ -53,6 +53,22 @@ class TimelineEvent:
         if now >= self.started_at + VIDEO_RETENTION:
             raise VideoExpired()
 
+    def playable_video_key(self, now: datetime) -> str:
+        """通過 ensure_playable 之後的影片 key。
+
+        讓呼叫端拿到的是 str 而不是 str | None:可播放性與「key 存在」本來就是
+        同一件事,分成兩步會逼每個呼叫端再檢查一次 None。
+        """
+        self.ensure_playable(now)
+        key = self.video_object_key
+        if key is None:  # ensure_playable 已經擋掉,這裡只是讓型別收斂
+            raise EventNotReady()
+        return key
+
+    def thumbnail_key_if_available(self, now: datetime) -> str | None:
+        """還在保留期內的縮圖 key,否則 None(前端顯示佔位圖示)。"""
+        return self.thumbnail_object_key if self.thumbnail_available(now) else None
+
     def thumbnail_available(self, now: datetime) -> bool:
         """縮圖是否已產生且還在 30 天保留期內(第 4 節)。
 

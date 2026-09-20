@@ -1,11 +1,15 @@
 """application 需要、但由外層實作的介面。以 detection 自己的語言命名。"""
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from datetime import datetime
 from decimal import Decimal
 from types import TracebackType
 from typing import Self
 from uuid import UUID
 
+from app.domains.detection.application.dtos import EncodedClip
+from app.domains.detection.domain.recording import Frame, RecordingSession
 from app.domains.detection.domain.repositories import EventRepository
 
 
@@ -54,14 +58,44 @@ class Backoff(ABC):
 
 
 class PushNotifier(ABC):
-    """Push 服務(09_spec 第 3.1 節)。"""
+    """Push 服務的 POST /internal/notifications/event-ready(09_spec 第 3 節)。"""
 
     @abstractmethod
     async def notify_event_ready(
-        self, *, device_id: UUID, event_id: UUID, confidence_score: Decimal
+        self,
+        *,
+        device_id: UUID,
+        event_id: UUID,
+        confidence_score: Decimal,
+        thumbnail_object_key: str | None,
+        started_at: datetime,
     ) -> None:
-        """觸發推播。
+        """觸發推播。參數對應 Push 服務的 EventReadyNotification(push/__init__.py)。
 
-        裝置名稱與防洗版計數窗由 Push 服務負責——devices 表不屬於本服務。
+        縮圖 key 與 started_at 由本服務夾帶——Push 沒有 events 表,只給 event_id
+        它組不出 R2 key(key 含事件日期)。但**不夾帶裝置名稱**:那是 Device 的資料,
+        由 Push 自己取即時值,使用者剛改過的鏡頭名稱才會立刻反映在通知標題上。
+
+        防洗版計數窗也由 Push 負責,本服務每次 ready 都照常呼叫。
         失敗不該回頭改事件狀態:事件已經 ready 是事實,推播沒送出是另一回事。
         """
+
+
+class FrameSource(ABC):
+    """鏡頭的影格串流(RTSP + 移動偵測模型)。
+
+    以 async iterator 表達,worker 的迴圈因此不必知道影格從哪來、多久一張;
+    測試餵固定腳本,正式環境接 RTSP。串流中斷時丟 CameraDisconnected。
+    """
+
+    @abstractmethod
+    def frames(self) -> AsyncIterator["Frame"]:
+        """持續產出影格,直到串流結束或斷線。"""
+
+
+class ClipEncoder(ABC):
+    """把錄下的畫面轉成可上傳的檔案(ffmpeg)。"""
+
+    @abstractmethod
+    async def encode(self, session: "RecordingSession", ended_at: datetime) -> "EncodedClip":
+        """產生影片與縮圖(07_spec 第 3.2 節)。"""

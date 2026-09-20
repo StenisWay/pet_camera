@@ -31,6 +31,18 @@ def is_motion(score: Decimal) -> bool:
     return score >= MOTION_THRESHOLD
 
 
+@dataclass(frozen=True)
+class Frame:
+    """一個影格的偵測結果。
+
+    worker 拿到的是「時間 + 信心分數」,不是畫面本身——影像解碼與模型推論是
+    adapter 的事,錄影規則只需要這兩個數字。
+    """
+
+    at: datetime
+    score: Decimal
+
+
 @dataclass
 class RecordingSession:
     event_id: UUID
