@@ -10,6 +10,7 @@ from app.shared_kernel.errors import (
     Conflict,
     Gone,
     Locked,
+    NotFound,
 )
 
 
@@ -57,3 +58,25 @@ class EmailAlreadyRegistered(Conflict):
     """此 Email 已被註冊"""
 
     code = "AUTH_004"
+
+
+class AccountNotFound(NotFound):
+    """找不到這個帳號"""
+
+    code = "VAL_001"
+
+
+class DeleteConfirmationMismatch(BusinessRuleViolation):
+    """輸入的 Email 與帳號不符"""
+
+    code = "VAL_001"
+
+
+class DeleteConfirmationPasswordWrong(InvalidCurrentPassword):
+    """密碼錯誤
+
+    與 AUTH_008(修改密碼)分開,因為 05_spec 第 5 節給了刪除帳號自己的錯誤碼,
+    前端要在不同的表單裡顯示不同的訊息。
+    """
+
+    code = "AUTH_009"

@@ -15,6 +15,7 @@ dependencies = [
     "pyjwt>=2.10",
     "bcrypt>=4.2",
     "uuid6>=2024.7.10",
+    "anyio>=4.15.1",
 ]
 
 [dependency-groups]
@@ -49,8 +50,10 @@ ignore = ["UP042"]
 "tests/*" = ["S101", "S105", "S106"]
 # 對外契約沿用 interfaces/backend/*/__init__.py 一致的 Optional[...] 寫法
 "__init__.py" = ["UP045"]
-# 設定的預設值是佔位字串,不是硬編密碼
+# 設定的預設值與 "Bearer" 這類常數是佔位字串,不是硬編密碼
 "app/core/config.py" = ["S105"]
+"app/domains/*/presentation/schemas.py" = ["S105"]
+"app/main.py" = ["S105"]
 
 [tool.mypy]
 python_version = "3.12"

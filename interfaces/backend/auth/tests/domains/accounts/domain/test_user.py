@@ -212,3 +212,29 @@ def test_changing_password_does_not_lock_out_on_repeated_mistakes() -> None:
             )
     assert user.failed_login_attempts == 0
     assert user.locked_until is None
+
+
+def test_reset_password_does_not_require_the_current_one() -> None:
+    """§2.4:重設流程的憑據是信裡的 token,不是舊密碼——使用者正是因為忘記才來的。"""
+    user = make_user()
+    user.reset_password(RawPassword.parse("brandnew2"), hasher=HASHER)
+    assert user.password_hash == "hashed:brandnew2"
+
+
+def test_reset_password_clears_an_active_lockout() -> None:
+    """重設密碼等於證明了信箱所有權,沒理由讓使用者繼續被鎖在門外。"""
+    user = make_user(
+        failed_login_attempts=MAX_LOGIN_ATTEMPTS,
+        locked_until=NOW + timedelta(minutes=10),
+    )
+    user.reset_password(RawPassword.parse("brandnew2"), hasher=HASHER)
+    assert user.failed_login_attempts == 0
+    assert user.locked_until is None
+    user.authenticate(RawPassword.parse("brandnew2"), hasher=HASHER, now=NOW)
+
+
+def test_reset_password_works_for_an_oauth_only_account() -> None:
+    """§2.7:純第三方帳號可以透過忘記密碼流程設定密碼。"""
+    user = make_user(password_hash=None)
+    user.reset_password(RawPassword.parse("brandnew2"), hasher=HASHER)
+    assert user.has_password() is True

@@ -180,7 +180,7 @@ class FakeTokenFactory(OpaqueTokenFactory):
 class FakeSessionService(SessionService):
     def __init__(self) -> None:
         self.issued: list[tuple[uuid.UUID, Platform]] = []
-        self.revoked: list[tuple[uuid.UUID, uuid.UUID | None]] = []
+        self.revoked: list[tuple[uuid.UUID, str | None]] = []
 
     async def issue(self, user_id: uuid.UUID, platform: Platform) -> IssuedSession:
         self.issued.append((user_id, platform))
@@ -190,9 +190,9 @@ class FakeSessionService(SessionService):
         )
 
     async def revoke_all(
-        self, user_id: uuid.UUID, *, except_token_id: uuid.UUID | None = None
+        self, user_id: uuid.UUID, *, except_refresh_token: str | None = None
     ) -> None:
-        self.revoked.append((user_id, except_token_id))
+        self.revoked.append((user_id, except_refresh_token))
 
 
 class FakeLoginAttemptTracker(LoginAttemptTracker):

@@ -7,6 +7,7 @@
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from enum import Enum
 
 from app.shared_kernel.platform import Platform
 
@@ -21,6 +22,18 @@ _ACCESS_TOKEN_TTL = {
     Platform.WEB: WEB_ACCESS_TOKEN_TTL,
     Platform.APP: APP_ACCESS_TOKEN_TTL,
 }
+
+
+class RevocationReason(str, Enum):
+    """為什麼這個 refresh token 被撤銷。
+
+    §2.3.1 的重放偵測只對 ROTATED 生效。其餘兩種是**我們主動**撤銷的,
+    那個用戶端毫不知情,它下次送上來的舊 token 無辜,不該牽連整串 session。
+    """
+
+    ROTATED = "rotated"  # 換發新 token 時撤銷舊的
+    LOGGED_OUT = "logged_out"  # 使用者自己登出(§2.5)
+    SUPERSEDED = "superseded"  # 改密碼/重設密碼時連帶撤銷(05_spec 2.1、02_spec 2.4)
 
 
 @dataclass(frozen=True)
@@ -72,6 +85,7 @@ class RefreshToken:
     expires_at: datetime
     revoked_at: datetime | None
     created_at: datetime
+    revoked_reason: RevocationReason | None = None
 
     @classmethod
     def issue(
@@ -88,3 +102,10 @@ class RefreshToken:
 
     def is_usable(self, *, now: datetime) -> bool:
         return self.revoked_at is None and self.expires_at > now
+
+    def looks_replayed(self) -> bool:
+        """被 rotation 換掉之後又出現 = 外洩徵兆(§2.3.1)。
+
+        我們主動撤銷的(登出、改密碼)不算:那個用戶端根本不知道自己被撤銷了。
+        """
+        return self.revoked_reason is RevocationReason.ROTATED

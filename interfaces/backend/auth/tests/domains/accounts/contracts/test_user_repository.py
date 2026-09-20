@@ -10,17 +10,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from app.domains.accounts.application.ports import AccountsUnitOfWork
 from app.domains.accounts.domain.entities import User
 from app.domains.accounts.domain.exceptions import EmailAlreadyRegistered
 from app.domains.accounts.domain.value_objects import Email
-from tests.domains.accounts.fakes import FakeAccountsUnitOfWork
 
 NOW = datetime(2026, 9, 20, 12, 0, tzinfo=UTC)
-
-
-@pytest.fixture
-def uow() -> FakeAccountsUnitOfWork:
-    return FakeAccountsUnitOfWork()
 
 
 def make_user(email: str = "owner@example.com") -> User:
@@ -34,12 +29,12 @@ def make_user(email: str = "owner@example.com") -> User:
     )
 
 
-async def test_get_by_email_returns_none_when_absent(uow: FakeAccountsUnitOfWork) -> None:
+async def test_get_by_email_returns_none_when_absent(uow: AccountsUnitOfWork) -> None:
     async with uow:
         assert await uow.users.get_by_email(Email.parse("nobody@example.com")) is None
 
 
-async def test_added_user_is_retrievable_after_commit(uow: FakeAccountsUnitOfWork) -> None:
+async def test_added_user_is_retrievable_after_commit(uow: AccountsUnitOfWork) -> None:
     user = make_user()
     async with uow:
         await uow.users.add(user)
@@ -51,7 +46,7 @@ async def test_added_user_is_retrievable_after_commit(uow: FakeAccountsUnitOfWor
         assert found.id == user.id
 
 
-async def test_changes_are_rolled_back_without_commit(uow: FakeAccountsUnitOfWork) -> None:
+async def test_changes_are_rolled_back_without_commit(uow: AccountsUnitOfWork) -> None:
     user = make_user()
     async with uow:
         await uow.users.add(user)
@@ -62,7 +57,7 @@ async def test_changes_are_rolled_back_without_commit(uow: FakeAccountsUnitOfWor
 
 
 async def test_adding_a_duplicate_email_raises_the_domain_conflict(
-    uow: FakeAccountsUnitOfWork,
+    uow: AccountsUnitOfWork,
 ) -> None:
     """§2.2:唯一性靠約束,不靠先查再寫;衝突要以領域例外的形式浮現。"""
     async with uow:
@@ -75,7 +70,7 @@ async def test_adding_a_duplicate_email_raises_the_domain_conflict(
 
 
 async def test_saving_a_user_persists_the_lockout_counters(
-    uow: FakeAccountsUnitOfWork,
+    uow: AccountsUnitOfWork,
 ) -> None:
     user = make_user()
     async with uow:
@@ -98,7 +93,7 @@ async def test_saving_a_user_persists_the_lockout_counters(
 
 
 async def test_modifying_a_loaded_user_without_save_does_not_persist(
-    uow: FakeAccountsUnitOfWork,
+    uow: AccountsUnitOfWork,
 ) -> None:
     """get() 回傳的是新物件;忘了 save 就不算數——這條讓漏 save 在測試就被抓到。"""
     user = make_user()
@@ -118,7 +113,7 @@ async def test_modifying_a_loaded_user_without_save_does_not_persist(
         assert reloaded.failed_login_attempts == 0
 
 
-async def test_deleting_a_user_removes_it(uow: FakeAccountsUnitOfWork) -> None:
+async def test_deleting_a_user_removes_it(uow: AccountsUnitOfWork) -> None:
     user = make_user()
     async with uow:
         await uow.users.add(user)

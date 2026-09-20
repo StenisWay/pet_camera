@@ -49,9 +49,17 @@ def error_body(code: str, message: str) -> dict[str, dict[str, str]]:
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def _handle_domain_error(_: Request, exc: DomainError) -> JSONResponse:
-        return JSONResponse(
-            status_code=status_for(exc), content=error_body(exc.code, exc.message)
-        )
+        body: dict[str, object] = dict(error_body(exc.code, exc.message))
+        headers: dict[str, str] = {}
+
+        # AUTH_005 的呈現方式是阻斷式對話框 + 倒數時間(02_spec 第 5 節),
+        # 所以剩餘秒數要進回應。Retry-After 是同一個資訊的標準標頭形式。
+        retry_after = getattr(exc, "retry_after_seconds", None)
+        if isinstance(retry_after, int):
+            body["retry_after_seconds"] = retry_after
+            headers["Retry-After"] = str(retry_after)
+
+        return JSONResponse(status_code=status_for(exc), content=body, headers=headers)
 
     @app.exception_handler(RequestValidationError)
     async def _handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:

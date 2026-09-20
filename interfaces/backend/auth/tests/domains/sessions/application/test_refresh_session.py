@@ -14,7 +14,11 @@ from app.domains.sessions.domain.exceptions import RefreshTokenRejected
 from app.shared_kernel.platform import Platform
 from tests.domains.accounts.fakes import FakeTokenFactory, FixedClock, SequentialIdGenerator
 from tests.domains.sessions.application.conftest import NOW
-from tests.domains.sessions.fakes import FakeAccessTokenSigner, FakeSessionsUnitOfWork
+from tests.domains.sessions.fakes import (
+    FakeAccessTokenSigner,
+    FakeRefreshTokenRepository,
+    FakeSessionsUnitOfWork,
+)
 
 USER_ID = uuid.uuid4()
 
@@ -172,3 +176,36 @@ async def test_rotated_access_token_is_a_fresh_web_token(
         "exp": int((later + timedelta(hours=1)).timestamp()),
         "platform": "web",
     }
+
+
+async def test_losing_the_conditional_update_is_treated_as_a_replay(
+    issue: IssueSession,
+    use_case: RefreshSession,
+    uow: FakeSessionsUnitOfWork,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """審查 #11:真正的併發下,輸家是「撤銷影響 0 列」而不是「讀到已撤銷」。
+
+    序列化地重放會先在 looks_replayed() 就被攔下,走不到這條路;把 revoke 壓成
+    False 才測得到。與重放一律從嚴——兩者在這個時間點無法區分。
+    """
+    first = await issue.execute(USER_ID, Platform.WEB)
+    second = await issue.execute(USER_ID, Platform.WEB)
+    assert first.refresh_token is not None
+    assert second.refresh_token is not None
+
+    async def always_loses(*args: object, **kwargs: object) -> bool:
+        return False
+
+    monkeypatch.setattr(FakeRefreshTokenRepository, "revoke", always_loses, raising=True)
+
+    with pytest.raises(RefreshTokenRejected):
+        await use_case.execute(first.refresh_token)
+
+    monkeypatch.undo()
+    async with uow:
+        bystander = await uow.refresh_tokens.get_by_fingerprint(
+            "fp:" + second.refresh_token
+        )
+    assert bystander is not None
+    assert bystander.is_usable(now=NOW) is False

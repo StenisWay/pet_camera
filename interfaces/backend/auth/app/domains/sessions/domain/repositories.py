@@ -8,7 +8,7 @@ import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from app.domains.sessions.domain.entities import RefreshToken
+from app.domains.sessions.domain.entities import RefreshToken, RevocationReason
 
 
 class RefreshTokenRepository(ABC):
@@ -23,7 +23,9 @@ class RefreshTokenRepository(ABC):
         """實際寫入在 commit() 時生效。"""
 
     @abstractmethod
-    async def revoke(self, token_id: uuid.UUID, *, revoked_at: datetime) -> bool:
+    async def revoke(
+        self, token_id: uuid.UUID, *, revoked_at: datetime, reason: RevocationReason
+    ) -> bool:
         """標記撤銷,回傳「本次呼叫是否真的完成撤銷」。
 
         已經是撤銷狀態、或紀錄不存在時回 False。rotation 的併發勝負靠這個值判定:
@@ -37,6 +39,7 @@ class RefreshTokenRepository(ABC):
         user_id: uuid.UUID,
         *,
         revoked_at: datetime,
+        reason: RevocationReason,
         except_token_id: uuid.UUID | None = None,
     ) -> int:
         """撤銷該使用者所有**未撤銷**的 token,回傳實際撤銷筆數。

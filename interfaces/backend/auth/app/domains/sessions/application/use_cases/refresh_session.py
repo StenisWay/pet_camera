@@ -12,7 +12,11 @@ import uuid
 
 from app.domains.sessions.application.dtos import SessionTokens
 from app.domains.sessions.application.ports import AccessTokenSigner, SessionsUnitOfWork
-from app.domains.sessions.domain.entities import AccessToken, RefreshToken
+from app.domains.sessions.domain.entities import (
+    AccessToken,
+    RefreshToken,
+    RevocationReason,
+)
 from app.domains.sessions.domain.exceptions import RefreshTokenRejected
 from app.shared_kernel.platform import Platform
 from app.shared_kernel.ports import Clock, IdGenerator, OpaqueTokenFactory
@@ -45,14 +49,19 @@ class RefreshSession:
                 raise RefreshTokenRejected()
 
             if existing.revoked_at is not None:
-                await self._revoke_everything(existing.user_id)
+                # 只有「被 rotation 換掉之後又出現」才是竊取徵兆。登出或改密碼
+                # 造成的撤銷是我們主動做的,那個用戶端根本不知情。
+                if existing.looks_replayed():
+                    await self._revoke_everything(existing.user_id)
                 raise RefreshTokenRejected()
 
             if not existing.is_usable(now=now):
                 # 單純過期:不是外洩徵兆,不連帶撤銷
                 raise RefreshTokenRejected()
 
-            if not await self.uow.refresh_tokens.revoke(existing.id, revoked_at=now):
+            if not await self.uow.refresh_tokens.revoke(
+                existing.id, revoked_at=now, reason=RevocationReason.ROTATED
+            ):
                 await self._revoke_everything(existing.user_id)
                 raise RefreshTokenRejected()
 
@@ -72,5 +81,7 @@ class RefreshSession:
 
     async def _revoke_everything(self, user_id: uuid.UUID) -> None:
         """連帶撤銷必須 commit——否則例外一拋,__aexit__ 就把它回滾掉了。"""
-        await self.uow.refresh_tokens.revoke_all_for_user(user_id, revoked_at=self.clock.now())
+        await self.uow.refresh_tokens.revoke_all_for_user(
+            user_id, revoked_at=self.clock.now(), reason=RevocationReason.SUPERSEDED
+        )
         await self.uow.commit()

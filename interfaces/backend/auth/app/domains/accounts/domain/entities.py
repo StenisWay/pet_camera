@@ -98,6 +98,17 @@ class User:
 
         self.password_hash = hasher.hash(new)
 
+    def reset_password(self, new: RawPassword, *, hasher: PasswordHasher) -> None:
+        """忘記密碼流程設定新密碼(02_spec 第 2.4 節)。
+
+        不需要目前密碼——使用者正是因為忘記才走這條路;憑據是信裡的一次性 token,
+        由 use case 負責驗證。順便解除鎖定:能收到那封信就等於證明了信箱所有權,
+        沒理由讓他繼續被鎖在門外。
+        """
+        self.password_hash = hasher.hash(new)
+        self.failed_login_attempts = 0
+        self.locked_until = None
+
     def _fail_attempt(self, now: datetime) -> NoReturn:
         self.failed_login_attempts += 1
         if self.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:

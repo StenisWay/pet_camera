@@ -23,6 +23,27 @@
 | 6 | 「任一已登入 API 夾帶新 token」與「其餘服務只驗證不簽發」矛盾 | 改為 Auth 專責的 `POST /auth/token/extend`(02 規格第 2.3.2 節) |
 | 7 | 鎖定只對存在的帳號生效 → 帳號列舉器,與反列舉設計互斥 | 計數鍵改為送入的 email 字串,不存在的帳號以 Redis `login:fail:{email}` 承接,回應完全相同(02 規格第 2.3 節) |
 
+### 開發中才發現的第 8 個阻斷問題(TDD 過程補記)
+
+| # | 問題 | 處置 |
+|---|------|------|
+| 8 | 「改密碼保留當前 session」實作不出來,而且實作出來會自相矛盾 | 見下方兩段 |
+
+寫 e2e 時才浮出來的兩件事:
+
+**(a) 後端無從得知哪一個是「當前 session」。** access token 的 claim 只有
+`sub`/`iat`/`exp`/`platform`(§2.8),沒有任何東西指得出 `refresh_tokens` 的哪一列。
+處置:`PATCH /auth/password` 的 request body 新增選填的 `current_refresh_token`,
+由 Web 用戶端帶上自己手上的那一個(它本來就要帶去 `/auth/logout`)。App 沒有
+refresh token,省略即可。**`02_spec` §2.8 的 claim 集合不必改。**
+
+**(b) 撤銷之後,無辜的用戶端看起來跟竊賊一模一樣。** 改密碼撤銷了另一個分頁的
+token;那個分頁下次自動換發時送上來的是一個「已撤銷的 token」——正好命中 §2.3.1
+的重放偵測,於是連我們刻意保留的當前 session 也被一起撤銷,`05_spec` §2.1 的
+「不強制登出當前 session」形同虛設。處置:`refresh_tokens` 新增 `revoked_reason`
+(`rotated` / `logged_out` / `superseded`),**重放偵測只對 `rotated` 生效**。
+登出與改密碼造成的撤銷是我們主動做的,那個用戶端根本不知情,不該被當成竊取者。
+
 另有 11 項🟡(JWT claim 格式、登出 request body、refresh token 重放偵測與併發、
 註冊唯一性競態、email 正規化、密碼 72 **bytes** 上限、`retry_after_seconds`、
 忘記密碼限流與寄信失敗處理、改密碼撤銷其他 session)同樣已寫進規格書,
@@ -101,19 +122,19 @@ F0.1 的 email/密碼流程 + F0.4 全部。**第三方登入(02 規格第 2.7 �
 - [x] Login:`LoginAttemptTracker` 失效時 fail-open,不鎖定也不讓請求失敗
 - [x] Login:成功 → 呼叫 `SessionService.issue(user_id, platform)`,commit 一次
 - [x] Login:密碼錯誤仍要 commit(失敗計數必須寫入)
-- [ ] RequestPasswordReset:email 不存在 → 回成功、不寄信、不建立 token(§2.4)
-- [ ] RequestPasswordReset:email 存在 → 建立 token(存雜湊)、寄出的連結帶明碼
-- [ ] RequestPasswordReset:寄信失敗 → 仍回成功(§2.4)
-- [ ] RequestPasswordReset:同一 email 一小時內第 6 次 → RATE_001(§2.4)
-- [ ] ResetPassword:成功 → 更新雜湊、`mark_used`、撤銷該使用者全部 refresh token、commit
-- [ ] ResetPassword:`mark_used` 回 False(重複點擊/併發)→ AUTH_007,密碼不變
-- [ ] ResetPassword:新密碼不符規則 → AUTH_006,且 token 未被消耗
-- [ ] ChangePassword:成功 → 撤銷其他 refresh token、以 `exclude_id` 保留當前(05 §2.1)
-- [ ] DeleteAccount:密碼確認錯 → AUTH_009,且未呼叫任何內部端點
-- [ ] DeleteAccount:`password_hash` 為 None 時以 email 文字確認,不符 → VAL_001(05 §2.2)
-- [ ] DeleteAccount:Device 端點失敗 → SRV_002,`users` 未刪除,Album 端點未被呼叫
-- [ ] DeleteAccount:Album 端點失敗 → SRV_002,`users` 未刪除
-- [ ] DeleteAccount:全成功 → 依序 Device → Album,最後刪除 `users`,commit 一次
+- [x] RequestPasswordReset:email 不存在 → 回成功、不寄信、不建立 token(§2.4)
+- [x] RequestPasswordReset:email 存在 → 建立 token(存雜湊)、寄出的連結帶明碼
+- [x] RequestPasswordReset:寄信失敗 → 仍回成功(§2.4)
+- [x] RequestPasswordReset:同一 email 一小時內第 6 次 → RATE_001(§2.4)
+- [x] ResetPassword:成功 → 更新雜湊、`mark_used`、撤銷該使用者全部 refresh token、commit
+- [x] ResetPassword:`mark_used` 回 False(重複點擊/併發)→ AUTH_007,密碼不變
+- [x] ResetPassword:新密碼不符規則 → AUTH_006,且 token 未被消耗
+- [x] ChangePassword:成功 → 撤銷其他 refresh token、以 `exclude_id` 保留當前(05 §2.1)
+- [x] DeleteAccount:密碼確認錯 → AUTH_009,且未呼叫任何內部端點
+- [x] DeleteAccount:`password_hash` 為 None 時以 email 文字確認,不符 → VAL_001(05 §2.2)
+- [x] DeleteAccount:Device 端點失敗 → SRV_002,`users` 未刪除,Album 端點未被呼叫
+- [x] DeleteAccount:Album 端點失敗 → SRV_002,`users` 未刪除
+- [x] DeleteAccount:全成功 → 依序 Device → Album,最後刪除 `users`,commit 一次
 
 ### sessions / domain
 - [x] Web 簽發:access `exp = iat + 1h`、refresh `exp = iat + 30d`(§2.6)
@@ -129,17 +150,24 @@ F0.1 的 email/密碼流程 + F0.4 全部。**第三方登入(02 規格第 2.7 �
 - [x] RefreshTokens:token 已撤銷 → 撤銷該使用者全部未撤銷 token,再回 AUTH_010(§2.3.1 重放偵測)
 - [x] RefreshTokens:`revoke` 回 False(併發輸家)→ 視為重放,AUTH_010
 - [x] RefreshTokens:成功 → 舊的標記撤銷、新的寫入、commit 一次
-- [ ] ExtendAppToken:未滿 7 天 → 回 None(由 router 轉 204)
-- [ ] ExtendAppToken:滿 7 天 → 新 token 的 `iat` 為當下、`exp` 為 +180 天
-- [ ] ExtendAppToken:`platform` 為 web 的 token → AUTH_001(展延是 App 專用)
-- [ ] Logout:未知或已撤銷的 token → 不拋例外(§2.5 冪等)
+- [x] ExtendAppToken:未滿 7 天 → 回 None(由 router 轉 204)
+- [x] ExtendAppToken:滿 7 天 → 新 token 的 `iat` 為當下、`exp` 為 +180 天
+- [x] ExtendAppToken:`platform` 為 web 的 token → AUTH_001(展延是 App 專用)
+- [x] Logout:未知或已撤銷的 token → 不拋例外(§2.5 冪等)
 
 ### contract — fake 與 SQLAlchemy 跑同一份
+
+每一項都以 `params=["fake", "sqlalchemy"]` 跑兩次。fake 那一半已綠;
+SQLAlchemy 那一半需要 `AUTH_TEST_DATABASE_URL`,未設定時跳過(見下方「尚待處理」)。
 - [x] `UserRepository`:查無回 None、commit 後可取回、未 commit 回滾、email 重複 create 拋衝突、失敗計數的寫入與歸零生效
 - [x] `RefreshTokenRepository`:`revoke` 第一次 True、第二次 False;`revoke_all_by_user` 回傳筆數且不動已撤銷者;`exclude_id` 確實被保留
-- [ ] `PasswordResetTokenRepository`:`mark_used` 第一次 True、第二次 False
+- [x] `PasswordResetTokenRepository`:`mark_used` 第一次 True、第二次 False
 
 ### infrastructure — 真實 PostgreSQL,不用 SQLite 代替
+
+**已寫好但尚未執行**:需要 `AUTH_TEST_DATABASE_URL` 指向一個可建表的資料庫。
+用 SQLite 跑這幾項會綠,但綠得毫無意義——它對 CHECK、CASCADE、timestamptz、
+條件 UPDATE 的語意都與 PostgreSQL 不同。
 - [ ] `CHECK email = lower(email)`:直接寫入大寫 email 會失敗(證明正規化非做不可)
 - [ ] email 唯一約束違反被轉成領域的衝突例外,IntegrityError 不外漏
 - [ ] `locked_until` 存取後時區完整還原(timestamptz)
@@ -148,24 +176,43 @@ F0.1 的 email/密碼流程 + F0.4 全部。**第三方登入(02 規格第 2.7 �
 - [ ] migration `0002` upgrade / downgrade 可往返
 
 ### presentation — 只測 HTTP 契約
-- [ ] `POST /auth/register` email 格式錯 → 400 + `VAL_001`
-- [ ] `POST /auth/register` 弱密碼 → 400 + `AUTH_006`;email 重複 → 409 + `AUTH_004`
-- [ ] `POST /auth/login` 帳密錯 → 401 + `AUTH_003`
-- [ ] `POST /auth/login` 鎖定 → 423 + `AUTH_005` + `retry_after_seconds`
-- [ ] `POST /auth/login` `platform=web` 回 access+refresh、`platform=app` 只回 access
-- [ ] `POST /auth/login` `platform` 非 app/web → 400 + `VAL_001`
-- [ ] `POST /auth/token/refresh` 無效 → 401 + `AUTH_010`
-- [ ] `POST /auth/token/extend` 未滿 7 天 → 204
-- [ ] `POST /auth/logout` 未知 token → 204
-- [ ] `POST /auth/password/forgot` 不存在的 email → 200,訊息與存在時完全相同
-- [ ] `POST /auth/password/reset` 過期 token → 410 + `AUTH_007`
-- [ ] `PATCH /auth/password` 未帶 token → 401 + `AUTH_001`;目前密碼錯 → 401 + `AUTH_008`
-- [ ] `DELETE /auth/account` 密碼錯 → 401 + `AUTH_009`;內部端點失敗 → 503 + `SRV_002`
-- [ ] 所有端點的回應都不含 `password_hash`
+- [x] `POST /auth/register` email 格式錯 → 400 + `VAL_001`
+- [x] `POST /auth/register` 弱密碼 → 400 + `AUTH_006`;email 重複 → 409 + `AUTH_004`
+- [x] `POST /auth/login` 帳密錯 → 401 + `AUTH_003`
+- [x] `POST /auth/login` 鎖定 → 423 + `AUTH_005` + `retry_after_seconds`
+- [x] `POST /auth/login` `platform=web` 回 access+refresh、`platform=app` 只回 access
+- [x] `POST /auth/login` `platform` 非 app/web → 400 + `VAL_001`
+- [x] `POST /auth/token/refresh` 無效 → 401 + `AUTH_010`
+- [x] `POST /auth/token/extend` 未滿 7 天 → 204
+- [x] `POST /auth/logout` 未知 token → 204
+- [x] `POST /auth/password/forgot` 不存在的 email → 200,訊息與存在時完全相同
+- [x] `POST /auth/password/reset` 過期 token → 410 + `AUTH_007`
+- [x] `PATCH /auth/password` 未帶 token → 401 + `AUTH_001`;目前密碼錯 → 401 + `AUTH_008`
+- [x] `DELETE /auth/account` 密碼錯 → 401 + `AUTH_009`;內部端點失敗 → 503 + `SRV_002`
+- [x] 所有端點的回應都不含 `password_hash`
 
 ### e2e
-- [ ] 註冊 → web 登入 → 改密碼 → 其他 refresh token 失效、當前仍可用 → 新密碼可登入
-- [ ] 忘記密碼 → 以信中 token 重設 → 舊密碼登入失敗、新密碼成功、原 refresh token 全失效
+- [x] 註冊 → web 登入 → 改密碼 → 其他 refresh token 失效、當前仍可用 → 新密碼可登入
+- [x] 忘記密碼 → 以信中 token 重設 → 舊密碼登入失敗、新密碼成功、原 refresh token 全失效
+
+## 尚待處理
+
+| 項目 | 說明 |
+|---|---|
+| `db/` 的 `revoked_reason` 欄位 | 上面問題 8(b) 新增的欄位,本服務的 ORM 已有,但 `db/models.py` 與一支新的 migration(`0003`)還沒加——`db/` 不在這個 worktree 裡。另需把 `01_資料模型與儲存規格.md` 第 2.5 節補上該欄位 |
+| `rule_doc` 同步 | 問題 8 的兩個處置要寫回 `05_spec` 第 2.1、3 節(request body 的 `current_refresh_token`)與 `02_spec` 第 2.3.1 節(重放偵測的適用範圍)。Phase 0 的規格修改留在 main 的工作區,尚未提交 |
+| 6 項 infrastructure 測試 | 已寫好,需要 `AUTH_TEST_DATABASE_URL`。本機 PostgreSQL 有跑,但 `pet_camera_migrate` 的密碼與 `db/.env.example` 的預設值不同,沒有憑證 |
+| 第三方登入(F0.1 §2.7) | 第二輪。契約中的 `OAuthIdentity` / `OAuthIdentityRepository` 已定義,刪除帳號的串聯清除已涵蓋該表 |
+| `EmailSender` 的正式實作 | 目前掛的是 `LoggingEmailSender`(**正式環境不可用**:重設連結等同一次性登入憑證,寫進 log 就是散佈它)。`SmtpEmailSender` 已備好,待部署環境提供 SMTP 設定 |
+
+## 覆蓋率
+
+`domain` 與 `application` 兩層 **100%**,唯一沒被覆蓋的是
+`accounts/domain/entities.py` 的 `_retry_after_seconds` 在 `locked_until is None`
+時的防禦性 `return 0`——該方法只在鎖定成立時才會被呼叫,這一行走不到。
+
+`infrastructure` 約 50%,缺的正是上面那 6 項需要真實資料庫的測試;
+整體 86%。
 
 ## 開發指令
 
@@ -174,5 +221,9 @@ uv sync
 uv run pytest -q
 uv run pytest --cov=app --cov-report=term-missing
 uv run python tools/check_layers.py --root .
+
+# 連同需要真實 PostgreSQL 的那一半(會建表與刪表,不要指到有資料的庫)
+AUTH_TEST_DATABASE_URL=postgresql+asyncpg://user:pw@localhost/pet_camera_test \
+    uv run pytest
 uv run ruff check . && uv run mypy app
 ```

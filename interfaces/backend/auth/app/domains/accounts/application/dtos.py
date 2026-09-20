@@ -37,3 +37,34 @@ class LoggedInUser:
     access_token: str
     # App 平台為 None(02_spec 第 2.3 節)
     refresh_token: str | None
+
+
+@dataclass(frozen=True)
+class RequestPasswordResetCommand:
+    email: str
+    # 限流的第二個維度(§2.4);取不到來源 IP 時傳空字串
+    client_ip: str
+
+
+@dataclass(frozen=True)
+class ResetPasswordCommand:
+    token: str
+    new_password: str
+
+
+@dataclass(frozen=True)
+class ChangePasswordCommand:
+    user_id: uuid.UUID
+    # password_hash 為 None 的帳號免附(05_spec 第 2.1 節)
+    current_password: str | None
+    new_password: str
+    # 保留當前 session 不被撤銷(05_spec 第 2.1 節)。App 沒有 refresh token,
+    # 本來就沒有東西要保留,傳 None 即可。
+    current_refresh_token: str | None = None
+
+
+@dataclass(frozen=True)
+class DeleteAccountCommand:
+    user_id: uuid.UUID
+    # 已設密碼的帳號填密碼,純第三方帳號填自己的 Email(05_spec 第 2.2 節)
+    confirmation: str

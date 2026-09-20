@@ -54,12 +54,15 @@ class SessionService(ABC):
 
     @abstractmethod
     async def revoke_all(
-        self, user_id: uuid.UUID, *, except_token_id: uuid.UUID | None = None
+        self, user_id: uuid.UUID, *, except_refresh_token: str | None = None
     ) -> None:
         """撤銷該使用者所有未撤銷的 refresh token。
 
-        改密碼時以 except_token_id 保留當前 session(05_spec 第 2.1 節);
+        改密碼時以 except_refresh_token 保留當前 session(05_spec 第 2.1 節);
         重設密碼時不保留(02_spec 第 2.4 節)。
+
+        用**明碼 refresh token** 而不是 sessions 內部的列 id:accounts 手上只有
+        用戶端送來的那個字串,「怎麼從字串找到那一列」是 sessions 的事。
         """
 
 

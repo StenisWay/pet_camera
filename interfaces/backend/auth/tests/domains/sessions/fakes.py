@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Self
 
 from app.domains.sessions.application.ports import AccessTokenSigner, SessionsUnitOfWork
-from app.domains.sessions.domain.entities import RefreshToken
+from app.domains.sessions.domain.entities import RefreshToken, RevocationReason
 from app.domains.sessions.domain.repositories import RefreshTokenRepository
 
 
@@ -29,13 +29,16 @@ class FakeRefreshTokenRepository(RefreshTokenRepository):
     async def add(self, token: RefreshToken) -> None:
         self.pending[token.id] = copy.deepcopy(token)
 
-    async def revoke(self, token_id: uuid.UUID, *, revoked_at: datetime) -> bool:
+    async def revoke(
+        self, token_id: uuid.UUID, *, revoked_at: datetime, reason: RevocationReason
+    ) -> bool:
         # 條件更新:只有「目前還沒撤銷」才算這次撤銷成功
         token = self._visible().get(token_id)
         if token is None or token.revoked_at is not None:
             return False
         updated = copy.deepcopy(token)
         updated.revoked_at = revoked_at
+        updated.revoked_reason = reason
         self.pending[token_id] = updated
         return True
 
@@ -44,6 +47,7 @@ class FakeRefreshTokenRepository(RefreshTokenRepository):
         user_id: uuid.UUID,
         *,
         revoked_at: datetime,
+        reason: RevocationReason,
         except_token_id: uuid.UUID | None = None,
     ) -> int:
         revoked = 0
@@ -54,6 +58,7 @@ class FakeRefreshTokenRepository(RefreshTokenRepository):
                 continue
             updated = copy.deepcopy(token)
             updated.revoked_at = revoked_at
+            updated.revoked_reason = reason
             self.pending[token.id] = updated
             revoked += 1
         return revoked
