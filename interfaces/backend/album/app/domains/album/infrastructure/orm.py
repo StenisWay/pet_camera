@@ -32,6 +32,12 @@ class MediaItemRow(TimestampMixin, Base):
             name="drive_export_status_valid",
         ),
         CheckConstraint("type IN ('photo', 'clip')", name="type_valid"),
+        # 與 db/models.py 的 ck_media_items_drive_file_id_presence 一致:
+        # 只有 exported 才有 drive_file_id,其餘狀態必須是 null
+        CheckConstraint(
+            "(drive_export_status = 'exported') = (drive_file_id IS NOT NULL)",
+            name="drive_file_id_presence",
+        ),
         # 第 2.4 節:相簿分頁完全靠這個索引,id 一併納入是因為游標是 (captured_at, id)
         Index("ix_media_items_owner_captured", "user_id", "captured_at", "id"),
     )

@@ -88,10 +88,13 @@ class AlbumItem:
         """12_spec 第 2.3 節:受理匯出,狀態先轉 exporting。
 
         只有 ready 的項目有檔案可上傳;已 exported 的仍可再次匯出(第 2.3.4 節)。
+        重新匯出會在 Drive 建立新檔案,舊的 drive_file_id 當下就失效,必須清掉——
+        留著它會違反「exported 才有 file id」這個不變條件。
         """
         if not self.is_ready:
             raise MediaItemNotReady()
         self.drive_export_status = DriveExportStatus.EXPORTING
+        self.drive_file_id = None
         self.export_state_changed_at = now
 
     def complete_export(self, *, drive_file_id: str, now: datetime) -> None:
@@ -102,4 +105,5 @@ class AlbumItem:
     def fail_export(self, now: datetime) -> None:
         """DRIVE_002:匯出失敗不影響該項目在相簿內的正常瀏覽,只改匯出狀態。"""
         self.drive_export_status = DriveExportStatus.FAILED
+        self.drive_file_id = None
         self.export_state_changed_at = now

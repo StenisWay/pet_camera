@@ -127,20 +127,24 @@ Load Balancer 分流:`GET /media`、`DELETE /media/{id}`、`POST /media/export/g
 | 10 | `exporting` 中仍可刪除;只有 `ready` 可匯出,其餘 `VAL_001` |
 | 12 | **列表回應直接夾帶 10 分鐘效期的 presigned URL**。12_spec 沒有定義相簿縮圖如何取得,但網格一次顯示 30 張,逐一去 Media 服務換 URL 不合理 |
 
-## 待辦:建立資料庫
+## 資料庫
 
-等規格全部確認後,依 `postgres-db-master` 產出並審查 Alembic migration。目前已知:
+schema 的唯一事實來源是 `rule_doc/功能需求/01_資料模型與儲存規格.md`,可執行版本在
+repo 根目錄的 [`db/`](../../../db/README.md)(七個服務共用一個 PostgreSQL,
+改 schema 一律走 `db/migrations/`)。本服務需要的:
 
-1. **新表 `google_drive_credentials`**(Album 服務擁有):`id` PK、`user_id` unique
-   FK→users ON DELETE CASCADE、`refresh_token`(**需加密**)、`drive_folder_id`、
-   `connected_at`、`created_at`、`updated_at`。
+1. **`google_drive_credentials`**(Album 擁有):`id` PK、`user_id` unique
+   FK→users ON DELETE CASCADE、`refresh_token`(**目前明碼,加密方式待確認**)、
+   `drive_folder_id`、`connected_at`、`created_at`、`updated_at`。
 2. **`media_items` 不需要新增欄位**。匯出逾時判定用第 2.0 節既有的 `updated_at`
    (由 trigger 維護)——處於 `exporting` 的項目不會再被 Media 服務寫入。
-3. `media_items` 的索引由 `(user_id, captured_at desc)` 改為
-   `(user_id, captured_at desc, id)`,組合游標分頁需要。
+3. `media_items` 的索引需含 `id`(`(user_id, captured_at desc, id)`),組合游標分頁
+   才不會退化成排序掃描。
 
-以上 1、3 已寫回 `rule_doc/功能需求/01_資料模型與儲存規格.md`(第 2.4、2.8、6 節),
-規格審查的決議也寫回 `12_spec_相簿與雲端匯出.md`(第 2.1、2.3、3 節)。
+`app/domains/album/infrastructure/orm.py` 是本服務自己的 ORM(依 `db/models.py` 的
+說明,各服務自行決定 ORM 形狀),欄位與約束必須與 `db/models.py` 保持一致——
+特別是 `ck_media_items_drive_file_id_presence`:**只有 `exported` 才有
+`drive_file_id`**,所以重新匯出與匯出失敗都要把它清成 `null`。
 
 ## 已知限制
 

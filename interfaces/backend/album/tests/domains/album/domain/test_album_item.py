@@ -115,3 +115,25 @@ def test_export_without_a_timestamp_is_treated_as_stale():
     item = an_item(drive_export_status=DriveExportStatus.EXPORTING, export_state_changed_at=None)
 
     assert item.is_export_stale(now=NOW, after=STALE_AFTER)
+
+
+def test_re_exporting_clears_the_previous_drive_file_id():
+    """12_spec 第 2.3.4 節允許重複匯出,而每次匯出都會在 Drive 建立一個新檔案。
+
+    舊的 drive_file_id 在重新匯出的當下就失效了,必須清掉:
+    db/models.py 的 ck_media_items_drive_file_id_presence 要求
+    「exported 且有 file id」或「非 exported 且沒有 file id」,留著舊值會直接違反約束。
+    """
+    item = an_item(drive_export_status=DriveExportStatus.EXPORTED, drive_file_id="old-file")
+
+    item.start_export(NOW)
+
+    assert item.drive_file_id is None
+
+
+def test_failed_export_leaves_no_drive_file_id():
+    item = an_item(drive_export_status=DriveExportStatus.EXPORTED, drive_file_id="old-file")
+
+    item.fail_export(NOW)
+
+    assert item.drive_file_id is None

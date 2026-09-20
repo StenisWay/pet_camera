@@ -133,3 +133,31 @@ async def test_list_stale_exports_only_returns_items_past_the_cutoff(store):
         found = await uow.items.list_stale_exports(changed_before=NOW + timedelta(days=1))
 
     assert [i.id for i in found] == [stale.id]
+
+
+async def test_re_export_of_an_exported_item_persists_without_the_old_file_id(store):
+    """12_spec 第 2.3.4 節:已匯出的項目可再次匯出。
+
+    這一輪在 SQLAlchemy 實作上會真的打到 ck_media_items_drive_file_id_presence——
+    舊的 drive_file_id 沒清掉的話,資料庫會直接拒絕寫入。
+    """
+    item = await store.seed(an_item())
+
+    async with store.uow() as uow:
+        first = await uow.items.get(item.id)
+        first.start_export(NOW)
+        first.complete_export(drive_file_id="drive-1", now=NOW)
+        await uow.items.save(first)
+        await uow.commit()
+
+    async with store.uow() as uow:
+        again = await uow.items.get(item.id)
+        again.start_export(NOW)
+        await uow.items.save(again)
+        await uow.commit()
+
+    async with store.uow() as uow:
+        stored = await uow.items.get(item.id)
+
+    assert stored.drive_export_status is DriveExportStatus.EXPORTING
+    assert stored.drive_file_id is None
