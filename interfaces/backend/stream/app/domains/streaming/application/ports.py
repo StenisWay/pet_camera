@@ -41,7 +41,7 @@ class SignalingEvents(ABC):
     """
 
     @abstractmethod
-    async def wait_for_answer(self, session_id: uuid.UUID, timeout: timedelta) -> bool:
+    async def wait_for_answer(self, session_id: uuid.UUID, max_wait: timedelta) -> bool:
         """等待鏡頭端回覆 answer。收到回 True,逾時回 False(由 use case 轉成 STREAM_005)。"""
 
     @abstractmethod
@@ -49,7 +49,7 @@ class SignalingEvents(ABC):
         """通知正在等待這個 session 的 answer 的複本。"""
 
     @abstractmethod
-    async def wait_for_offer(self, device_id: uuid.UUID, timeout: timedelta) -> bool:
+    async def wait_for_offer(self, device_id: uuid.UUID, max_wait: timedelta) -> bool:
         """鏡頭端長輪詢:等待該裝置出現待處理的 offer。逾時回 False(第 3.2 節回 204)。"""
 
     @abstractmethod

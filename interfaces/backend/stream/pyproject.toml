@@ -49,6 +49,9 @@ select = ["E", "F", "I", "B", "UP", "ASYNC"]
 
 [tool.mypy]
 python_version = "3.12"
+# Pydantic 的 mypy plugin:沒有它,model_config 的 populate_by_name 不會被理解,
+# 用欄位名(而非 alias)建立 model 會被誤報 call-arg
+plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
 # 服務根目錄本身有 __init__.py(對外契約),不設這兩項 mypy 會把 app 當成 stream.app
 explicit_package_bases = true
