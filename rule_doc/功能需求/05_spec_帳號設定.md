@@ -34,6 +34,8 @@
 2. `DELETE /internal/users/{user_id}/media`(Album 服務,見 `12_spec_相簿與雲端匯出.md` 第 3 節)——刪除相簿項目與對應 R2 物件。
 3. 於單一交易內刪除 Auth 自己擁有的 `refresh_tokens`、`password_reset_tokens`、`oauth_identities`,以及由外鍵 `ON DELETE CASCADE` 帶走的 `push_tokens`、`google_drive_credentials`,最後刪除 `users` 紀錄。
 
+只呼叫 Device 與 Album 兩個端點,是因為只有這兩個服務除了刪資料列之外還要刪 R2 物件,而外鍵管不到物件儲存。Push 與 Album 的 `google_drive_credentials` 沒有這類副作用,交給 CASCADE 即可,不另外開端點(判準見 `01_資料模型與儲存規格.md` 第 6 節)。
+
 任一步驟失敗即整個操作失敗,回 `SRV_002`,**不刪除 `users`**,使用者帳號維持可用,可重試。這符合 `13_ADR_微服務與三節點部署.md` 第 4 節「Auth 一律選一致性(C)」——寧可刪不掉,也不要留下一個登不進去卻還有資料殘留的帳號。
 
 兩個內部端點都要求**冪等**:第 1 步成功、第 2 步失敗時,使用者重試會重新呼叫第 1 步,此時名下已無裝置,必須視為成功而非錯誤。由於第 1、2 步已經把資料刪掉,重試前的中間狀態是「帳號還在但裝置與相簿已清空」——這是刻意選擇:可重試且最終一致,優於為了原子性而引入跨服務分散式交易(該複雜度的否決理由見 ADR 第 5 節)。

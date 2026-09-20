@@ -83,10 +83,14 @@ Web Push `404`/`410`),後端刪除該筆 `push_tokens` 紀錄並停止對它發�
 | GET | `/push-tokens` | App/Web | 列出本人已登記的端點(不含 token 明碼),供設定頁還原開關狀態(審查 #11) |
 | DELETE | `/push-tokens/{push_token_id}` | App/Web | 解除登記(通知關閉或登出時呼叫) |
 | POST | `/internal/notifications/event-ready` | **內部**(Event worker) | 事件轉 `ready` 後觸發推播,回 202(審查 #1) |
-| DELETE | `/internal/users/{user_id}/push-tokens` | **內部**(Auth 服務) | 刪除帳號時串聯清除(審查 #8,見 `01_資料模型與儲存規格.md` 第 6 節) |
 
-兩個 `/internal/*` 端點只走 VCN 私有網路、不經 Load Balancer,並以 `X-Internal-Api-Key`
+`/internal/*` 端點只走 VCN 私有網路、不經 Load Balancer,並以 `X-Internal-Api-Key`
 標頭把關,與 Album 服務的內部端點同一套機制(見 `12_spec_相簿與雲端匯出.md` 第 3 節)。
+
+**刪除帳號不需要本服務的端點**:`push_tokens` 的外鍵 `ON DELETE CASCADE` 會在 Auth 刪除
+`users` 時一併帶走(見 `01_資料模型與儲存規格.md` 第 6 節)。內部清除端點只保留給「刪掉
+資料列還不夠」的服務——Device 與 Album 必須另外刪 R2 物件,外鍵管不到物件儲存,
+本服務沒有這類副作用。原審查 #8 的 `DELETE /internal/users/{user_id}/push-tokens` 因此取消。
 
 `POST /internal/notifications/event-ready` 的 body:
 
@@ -162,7 +166,7 @@ Web Push `404`/`410`),後端刪除該筆 `push_tokens` 紀錄並停止對它發�
 | 5 | `PushTokenRepository` 缺 `get_by_id`,無法驗證擁有者(IDOR) | 新增 `get_by_id`;非本人與不存在一律 404 |
 | 6 | 通知縮圖 presigned URL 效期 10 分鐘太短 | 通知用 30 分鐘,寫回資料模型第 3.3 節 |
 | 7 | 「高信心/一般」門檻未定義 | `>= 0.8` 為高信心 |
-| 8 | 刪除帳號的串聯清除沒有端點 | 新增 `DELETE /internal/users/{user_id}/push-tokens` |
+| 8 | 刪除帳號的串聯清除沒有端點 | **不新增端點**:`push_tokens` 靠外鍵 `ON DELETE CASCADE` 隨 `users` 一併刪除。內部端點只留給另有 R2 物件要清的 Device 與 Album(見第 3 節) |
 | 9 | `PUSH_003` 標 410 但無處可回 | 改為內部狀態標記,不對外回傳 |
 | 10 | `PUT` 回應內容未定義 | 回 `{id, platform, created_at}`,不含 token |
 | 11 | 設定頁無從查詢登記狀態 | 新增 `GET /push-tokens` |
