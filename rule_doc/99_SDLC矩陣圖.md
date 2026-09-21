@@ -22,7 +22,7 @@
 - 「需求」「功能規格」「資料模型」「UML 流程圖」欄位皆已完成,連結指向對應文件;F1、F4 不涉及專屬資料表,標示「-」。
 - 「實作」「測試」「部署」欄位一律只在產出**可從本檔連到**時才附連結。F6 的實作與測試已完成,但程式在 `feat/album-service` 分支上,main 的工作目錄沒有這些檔案,因此只標狀態不附連結;待該分支併入 main(或開出 PR)後再補連結。其餘功能的實作/測試狀態未經確認,維持原樣。
 - F6 的資料模型多了 `google_drive_credentials`(Album 服務擁有的 Google Drive 授權憑證,見 [功能需求/01_資料模型與儲存規格.md](功能需求/01_資料模型與儲存規格.md) 第 2.8 節),對應的 migration 是 `db/migrations/versions/0003_album_google_drive_credentials.py`。
-- 共用的橫向規範(不屬於單一功能列,故不列在表中):`功能需求/10_錯誤處理與狀態規範.md`(錯誤碼/UI 狀態規則)、`功能需求/screens/app/02_page_導覽與全域結構.md`、`功能需求/screens/web/02_page_導覽與全域結構.md`(全域導覽結構,App/Web 分開維護)。
+- 共用的橫向規範(不屬於單一功能列,故不列在表中):`功能需求/10_錯誤處理與狀態規範.md`(錯誤碼/UI 狀態規則)、`功能需求/14_API閘道與路由規範.md`(Nginx 閘道路由表、port 配置、服務間呼叫路徑,設定檔在 [`deploy/nginx/`](../deploy/nginx/README.md))、`功能需求/screens/app/02_page_導覽與全域結構.md`、`功能需求/screens/web/02_page_導覽與全域結構.md`(全域導覽結構,App/Web 分開維護)。
 - 系統架構圖(整體元件與部署關聯,對應 PRD 第 5 節,三節點 + Load Balancer 拓撲:VM-1/VM-2 跑無狀態服務複本、VM-3 集中四個單例元件 Postgres/Redis/事件偵測 worker/TURN;含 OCI(含 VCN 子網路)/Cloudflare 與第三方服務雲端邊界,外部連線直連 VM 不經 LB):[功能需求/diagrams/00_architecture_系統架構圖.drawio](功能需求/diagrams/00_architecture_系統架構圖.drawio),決策理由見 [功能需求/13_ADR_微服務與三節點部署.md](功能需求/13_ADR_微服務與三節點部署.md)。
 - 資料庫 ER 圖(整體資料表關聯,非單一功能流程):[功能需求/diagrams/01_er_資料模型.drawio](功能需求/diagrams/01_er_資料模型.drawio),欄位、nullable 與 `ON DELETE` 行為以 [功能需求/01_資料模型與儲存規格.md](功能需求/01_資料模型與儲存規格.md) 第 2 節為準。
 - schema 的可執行版本(SQLAlchemy model + Alembic migration + 本地建置腳本)在 [`db/`](../db/README.md);它不隸屬任一功能列,七個服務共用同一個資料庫。改 schema 一律走 `db/migrations/`,並同步更新上述規格書與 ER 圖。

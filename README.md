@@ -38,7 +38,7 @@ figma: https://www.figma.com/design/m90ohbl7tjMW7ZqmUqan1M/Pet-Camera?node-id=20
 | 硬體 | Raspberry Pi 5 (開發) / Pi Zero 2 W (量產目標)，Camera Module 3 |
 | 部署 | Oracle Always Free (3 VMs) + Oracle Flexible Load Balancer |
 
-架構採**三節點 + Load Balancer** 拓撲:VM-1/VM-2 跑無狀態服務複本、VM-3 集中 Postgres、Redis、事件偵測 worker、TURN 四個單例元件。詳細決策理由見 [13_ADR_微服務與三節點部署.md](rule_doc/功能需求/13_ADR_微服務與三節點部署.md)。
+架構採**三節點 + Load Balancer** 拓撲:VM-1/VM-2 跑無狀態服務複本、VM-3 集中 Postgres、Redis、事件偵測 worker、TURN 四個單例元件。每台服務節點上的 Nginx 依路徑把請求分派到各服務,見 [14_API閘道與路由規範.md](rule_doc/功能需求/14_API閘道與路由規範.md)。詳細決策理由見 [13_ADR_微服務與三節點部署.md](rule_doc/功能需求/13_ADR_微服務與三節點部署.md)。
 
 ## 專案結構
 
@@ -49,13 +49,15 @@ pet_camera/
 │   ├── web/                    # TypeScript repository interfaces
 │   ├── android/                # Kotlin repository interfaces
 │   └── ios/                    # Swift repository protocols
+├── deploy/
+│   └── nginx/                  # 服務節點內的 Nginx 閘道設定(規格見 14_API閘道與路由規範.md)
 ├── hardware/                   # 硬體規格書、開發流程圖、元件裝設位置圖
 ├── rule_doc/
 │   ├── 99_SDLC矩陣圖.md         # 功能 × SDLC 產出追蹤矩陣
 │   └── 功能需求/
 │       ├── 00_PRD_需求書.md      # 產品需求書
 │       ├── 01_資料模型與儲存規格.md
-│       ├── 02~13_spec_*.md      # 各功能規格書 + 錯誤處理規範 + ADR
+│       ├── 02~14_*.md           # 各功能規格書 + 錯誤處理規範 + ADR + API 閘道與路由規範
 │       ├── diagrams/            # draw.io 架構/ER/流程圖
 │       └── screens/
 │           ├── app/             # App 畫面規格 (6 頁)

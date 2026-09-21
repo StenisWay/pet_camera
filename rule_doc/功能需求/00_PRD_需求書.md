@@ -67,7 +67,7 @@ F1~F6 皆依賴使用者已登入、鏡頭已配對(F0.1、F0.2),F0 系列優先
 後端拆分為微服務,部署在三台 Oracle Always Free Ampere A1 VM(VM-1、VM-2 各 1 OCPU / 6GB 跑無狀態服務複本,VM-3:2 OCPU / 12GB 集中所有單例元件,由 4 OCPU / 24GB 免費額度依負載型態切分),前面掛一個 Oracle Flexible Load Balancer。完整拓撲、元件與連線標註見 `diagrams/00_architecture_系統架構圖.drawio`;決策理由與取捨見 `13_ADR_微服務與三節點部署.md`。
 
 **架構決策**:
-- 功能拆成七個獨立服務(Auth / Device / Event / Stream 訊令 / Push / Media / Album),VM-1、VM-2 各跑一份複本,由 Load Balancer 分流,提供基本容錯與水平擴展能力;各服務與資料表的對應關係見 `13_ADR_微服務與三節點部署.md` 第 1 節。
+- 功能拆成七個獨立服務(Auth / Device / Event / Stream 訊令 / Push / Media / Album),VM-1、VM-2 各跑一份複本,由 Load Balancer 分流,提供基本容錯與水平擴展能力;每台 VM 上的 Nginx 依路徑把請求分派到各服務,服務間呼叫亦經本機 Nginx,見 `14_API閘道與路由規範.md`;各服務與資料表的對應關係見 `13_ADR_微服務與三節點部署.md` 第 1 節。
 - Postgres 為單例,不做複寫,固定跑在獨立的 VM-3;所有服務複本(VM-1、VM-2)皆透過 VCN 私有網路連線至 VM-3,不對外開放。
 - Redis 為單例,與 Postgres 同置於 VM-3,提供 Stream 訊令 session、推播防洗版計數、全站限流等不需持久化的短效共享狀態,不做複寫,細節見 `13_ADR_微服務與三節點部署.md` 第 1.1 節。
 - 事件偵測 worker 為單例,固定跑在 VM-3,並直接接收鏡頭裝置的 RTSP 串流(不經 Load Balancer);與 Postgres 同機,事件寫入不經過網路。
@@ -150,4 +150,5 @@ TURN 那一列的順序——先確認 P2P 成功率是否偏低(通常是 NAT �
 - `12_spec_相簿與雲端匯出.md`
 - `10_錯誤處理與狀態規範.md`
 - `13_ADR_微服務與三節點部署.md`
+- `14_API閘道與路由規範.md`
 - `screens/` — 畫面/頁面規格書(首頁、底部導覽、攝影機畫面、相簿、會員資料等)
