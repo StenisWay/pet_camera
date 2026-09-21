@@ -1,0 +1,60 @@
+[project]
+name = "media"
+version = "0.1.0"
+description = "Pet Camera Media 服務(F5:剪輯與截圖)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "redis>=5.2",
+    "httpx>=0.28",
+    "pyjwt>=2.10",
+    "aioboto3>=13.2",
+    "uuid6>=2024.7.10",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "testcontainers>=4.8",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["."]
+# 目前不連真實資料庫:需要 PostgreSQL 的測試標記為 integration,預設不執行。
+# 要跑時:uv run pytest -m integration(需 TEST_DATABASE_URL 或可用的 Docker)
+addopts = "-m 'not integration'"
+markers = [
+    "integration: 需要真實 PostgreSQL 的測試(testcontainers 或 TEST_DATABASE_URL)",
+]
+
+[tool.ruff]
+line-length = 100
+# tools/check_layers.py 是從 skill 原樣複製的工具,不做格式調整以便日後同步更新
+exclude = ["tools"]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+# 服務根目錄本身有 __init__.py(對外契約),不設這兩項 mypy 會把 app 當成 media.app
+explicit_package_bases = true
+mypy_path = "."
+
+[tool.coverage.run]
+source = ["app"]
