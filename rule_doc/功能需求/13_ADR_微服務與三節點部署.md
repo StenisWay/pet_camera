@@ -8,6 +8,7 @@
 | 修訂 1 | 資料層(Postgres、Redis)自 VM-1 拆出獨立第三台 VM(VM-3),見第 1.1 節、節點分工表、第 6 節 |
 | 修訂 2 | 事件偵測 worker 與 TURN server 自 VM-1/VM-2 移入 VM-3,三個單例元件集中同一節點;OCPU 配額隨之改為 1+1+2,見節點分工表、第 4 節、第 6 節 |
 | 修訂 3 | 明確記錄兩項不做:不以自架 Nginx 取代 Oracle LB、不由 VM 供應 Web 靜態檔(改用 Cloudflare Pages),見第 5 節 |
+| 修訂 4 | 新增服務節點內的 Nginx 閘道:LB 後端改為各 VM 上的 Nginx,由 Nginx 依路徑分派到七個服務,服務間內部呼叫亦經本機 Nginx,見第 1.2 節與 `14_API閘道與路由規範.md` |
 
 ## 1. 決策
 
@@ -64,7 +65,23 @@ Redis 定位與 Postgres 相同:單例、不做複寫、固定跑在同一個節
 
 **這次移動放棄了什麼**:修訂 1 當初把資料層獨立出來的理由之一是「資源可視性」——資料層的 CPU/記憶體用量不被事件偵測/ffmpeg 干擾判讀。worker 移入 VM-3 後這一點不再成立,Postgres/Redis 與 CPU 密集工作重新同機,監控上要能分辨「Postgres 慢」與「worker 在轉碼」兩種情況(以容器為單位收集資源指標,不要只看主機層級的平均值)。接受這個代價的理由是上面第 2、3 點:換來 VM-1/VM-2 的完全對稱與單例故障域收斂。相對地也換回一項好處:worker 與 Postgres 同機,事件寫入不再是跨機連線(見第 4 節)。
 
-Load Balancer 只分流七個服務的 HTTP 流量;鏡頭裝置的 RTSP 串流直連 VM-3 的事件偵測 worker,App/Web 的 WebRTC media relay 直連 VM-3 的 TURN server;VM-1、VM-2 上的服務複本存取 VM-3 的 Postgres 與 Redis,一律走 VM 間的 VCN 私有網路——以上路徑都不經過 Load Balancer。兩台服務節點存取資料層都是跨機連線(且兩台一致,不再有「複本 A 同機、複本 B 跨機」的不對稱),這個取捨在第 4 節說明。
+Load Balancer 只分流七個服務的 HTTP 流量,後端目標是 VM-1、VM-2 上的 Nginx(第 1.2 節);鏡頭裝置的 RTSP 串流直連 VM-3 的事件偵測 worker,App/Web 的 WebRTC media relay 直連 VM-3 的 TURN server;VM-1、VM-2 上的服務複本存取 VM-3 的 Postgres 與 Redis,一律走 VM 間的 VCN 私有網路——以上路徑都不經過 Load Balancer。兩台服務節點存取資料層都是跨機連線(且兩台一致,不再有「複本 A 同機、複本 B 跨機」的不對稱),這個取捨在第 4 節說明。
+
+### 1.2 服務節點內的 Nginx 閘道
+
+LB 只決定請求送往哪一台 VM,不分辨請求屬於哪個服務。VM-1、VM-2 各跑一份 Nginx 作為 LB 的後端,依路徑(`/media/{media_item_id}` 另依 HTTP method)把請求分派到七個服務之一;VM-3 另跑一份只有內部 listener 的 Nginx,供 worker 呼叫其他服務。
+
+| 項目 | 決策 |
+|---|---|
+| TLS | 在 Oracle LB 終止,LB 到 Nginx 走 VCN 內的 HTTP |
+| Port | 對公網開放的 port(API、TURN、RTSP)使用協定標準 port;僅 VCN 內部的元件不使用預設 port;統一定義於 `14_API閘道與路由規範.md` 第 2 節 |
+| 對外路由 | 白名單制,未登記的路徑回 404;`/internal/*` 除鏡頭 signaling 外不對外 |
+| 服務間呼叫 | 一律打本機 Nginx 內部 listener(`127.0.0.1:23919`),不直接指定對方主機 |
+| 節點容錯 | upstream 以本機服務為主、另一台 VM 的同一服務為 backup;內部呼叫因此也能容忍單一服務複本故障,不只對外流量 |
+
+路由表、port 配置、用戶端 IP 還原與逾時設定見 `14_API閘道與路由規範.md`,設定檔在 `deploy/nginx/`。
+
+Nginx 各跑一份在 VM-1、VM-2 上,與它服務的服務複本同屬一個故障域,不新增故障域;TLS 仍由託管的 LB 處理,不佔用 Ampere 額度。這與第 5 節否決的「以 Nginx 取代 LB」是不同的配置。
 
 ## 2. 為什麼現在做微服務拆分
 
@@ -130,7 +147,7 @@ Redis 是單例,連不到時依用途分別降級,不套用同一套規則:
 
 **CQRS**:讀寫模型分離的成本是兩邊靠事件同步、讀到的資料可能延遲——現在的查詢形狀單純(裝置列表、事件分頁、相簿分頁),沒有複雜到需要獨立的讀取模型。**觸發點**:當某個畫面需要跨服務聚合資料(例如首頁同時顯示裝置狀態+最新事件+推播未讀數,現況分三次呼叫由前端組合),且這種聚合查詢的效能開始拖累原本的寫入路徑時,才評估為該畫面建立一個獨立的讀取模型(不必整個系統套 CQRS,只針對那個查詢)。
 
-**自架 Nginx 當入口取代 Oracle Load Balancer**:Nginx 的 `upstream` 有 round-robin/least_conn、`max_fails` 被動健康檢查與失敗重送,後端分流完全做得到,這不是爭點。爭點是**入口自己掛掉誰接手**:Nginx 必須跑在某台 VM 上,而唯一合理的落點是 VM-3(放 VM-1 或 VM-2 會新增一個故障域;VM-3 因為 Postgres 單例本來就是全站硬單點,擺在那裡不會讓可用性更差)。真正的否決理由是**資源**:VM-3 的 2 OCPU 是全系統瓶頸(第 6 節),事件偵測與 ffmpeg 已經在搶,再把 TLS handshake 與反向代理搬回同一台不划算;而 Oracle Flexible LB 是託管服務,不佔用 4 OCPU / 24GB 的 Ampere 額度,免費層本來就給一個,不用也不會把額度還給 VM。免費版 10 Mbps 的頻寬上限在這個架構下不構成限制——RTSP 直連 VM-3、WebRTC media relay 直連 TURN、影片走 R2 presigned URL,都不經過 LB,LB 只扛 JSON API 與 signaling。**觸發點**:若之後要消除 VM-3 這個單點(例如 Postgres 加 failover),或需要路徑路由/限流等 LB 做不到的能力,再重新評估——屆時的正解多半是「Oracle LB 在外層做節點容錯,Nginx 各跑一份在 VM-1/VM-2 內部當反向代理」,而不是拿 Nginx 取代 LB。
+**自架 Nginx 當入口取代 Oracle Load Balancer**:Nginx 的 `upstream` 有 round-robin/least_conn、`max_fails` 被動健康檢查與失敗重送,後端分流完全做得到,這不是爭點。爭點是**入口自己掛掉誰接手**:Nginx 必須跑在某台 VM 上,而唯一合理的落點是 VM-3(放 VM-1 或 VM-2 會新增一個故障域;VM-3 因為 Postgres 單例本來就是全站硬單點,擺在那裡不會讓可用性更差)。真正的否決理由是**資源**:VM-3 的 2 OCPU 是全系統瓶頸(第 6 節),事件偵測與 ffmpeg 已經在搶,再把 TLS handshake 與反向代理搬回同一台不划算;而 Oracle Flexible LB 是託管服務,不佔用 4 OCPU / 24GB 的 Ampere 額度,免費層本來就給一個,不用也不會把額度還給 VM。免費版 10 Mbps 的頻寬上限在這個架構下不構成限制——RTSP 直連 VM-3、WebRTC media relay 直連 TURN、影片走 R2 presigned URL,都不經過 LB,LB 只扛 JSON API 與 signaling。路徑路由由 VM-1、VM-2 內部的 Nginx 負責(第 1.2 節),Oracle LB 維持在外層做節點容錯。
 
 **由 VM 供應 Web 前端靜態檔**:Web 端是瀏覽器端渲染的前端(見 `00_PRD_需求書.md` 第 5 節),不需要伺服器端渲染,所以不引入 Apache 這類 web server——它的強項(mod_php 等伺服器端渲染)在這裡完全用不到,引入只是多一套技術棧。靜態檔改由 Cloudflare Pages 託管:零 VM 資源、免費層靜態流量不限量、TLS 與邊緣快取內建,而且靜態檔流量不會佔用 LB 的 10 Mbps。用 R2 開公開 bucket 當網站主機技術上可行,但 Pages 才有建置流程、SPA 路由 fallback 與部署版本回溯。
 

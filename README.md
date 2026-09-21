@@ -2,7 +2,7 @@
 
 飼主外出時也能掌握寵物在家狀況的智慧寵物攝影機。提供即時畫面查看、寵物活動自動偵測錄影、推播通知與事件時間軸回顧，讓使用者不用一直盯著直播畫面也能掌握寵物動態。
 
-> 目前專案階段:**設計/規劃期** — 需求、規格、資料模型與介面合約皆已完成，正在進行 UI 設計(Figma)與硬體採購。
+> 目前專案階段:**實作期** — 需求、規格、資料模型與介面合約皆已完成，硬體已採購完畢；後端服務開始實作，UI/UX 設計(Figma)持續調整中。
 figma: https://www.figma.com/design/m90ohbl7tjMW7ZqmUqan1M/Pet-Camera?node-id=2051-3&t=TrXZUA3jL90liymb-1
 
 ---
@@ -38,7 +38,7 @@ figma: https://www.figma.com/design/m90ohbl7tjMW7ZqmUqan1M/Pet-Camera?node-id=20
 | 硬體 | Raspberry Pi 5 (開發) / Pi Zero 2 W (量產目標)，Camera Module 3 |
 | 部署 | Oracle Always Free (3 VMs) + Oracle Flexible Load Balancer |
 
-架構採**三節點 + Load Balancer** 拓撲:VM-1/VM-2 跑無狀態服務複本、VM-3 集中 Postgres、Redis、事件偵測 worker、TURN 四個單例元件。詳細決策理由見 [13_ADR_微服務與三節點部署.md](rule_doc/功能需求/13_ADR_微服務與三節點部署.md)。
+架構採**三節點 + Load Balancer** 拓撲:VM-1/VM-2 跑無狀態服務複本、VM-3 集中 Postgres、Redis、事件偵測 worker、TURN 四個單例元件。每台服務節點上的 Nginx 依路徑把請求分派到各服務,見 [14_API閘道與路由規範.md](rule_doc/功能需求/14_API閘道與路由規範.md)。詳細決策理由見 [13_ADR_微服務與三節點部署.md](rule_doc/功能需求/13_ADR_微服務與三節點部署.md)。
 
 ## 專案結構
 
@@ -49,13 +49,16 @@ pet_camera/
 │   ├── web/                    # TypeScript repository interfaces
 │   ├── android/                # Kotlin repository interfaces
 │   └── ios/                    # Swift repository protocols
+├── db/                         # 資料庫 schema (SQLAlchemy models + Alembic migrations)
+├── deploy/
+│   └── nginx/                  # 服務節點內的 Nginx 閘道設定(規格見 14_API閘道與路由規範.md)
 ├── hardware/                   # 硬體規格書、開發流程圖、元件裝設位置圖
 ├── rule_doc/
 │   ├── 99_SDLC矩陣圖.md         # 功能 × SDLC 產出追蹤矩陣
 │   └── 功能需求/
 │       ├── 00_PRD_需求書.md      # 產品需求書
 │       ├── 01_資料模型與儲存規格.md
-│       ├── 02~13_spec_*.md      # 各功能規格書 + 錯誤處理規範 + ADR
+│       ├── 02~14_*.md           # 各功能規格書 + 錯誤處理規範 + ADR + API 閘道與路由規範
 │       ├── diagrams/            # draw.io 架構/ER/流程圖
 │       └── screens/
 │           ├── app/             # App 畫面規格 (6 頁)
@@ -74,9 +77,11 @@ pet_camera/
 | 系統設計 | ✅ 完成 | 12 張流程圖、ER 圖、架構圖、ADR (`13_ADR_*.md`) |
 | 硬體規格 | ✅ 完成 | `硬體規格書.md` + 元件裝設位置圖 + 硬體開發流程圖 |
 | 介面合約 | ✅ 完成 | 7 個後端服務與 App/Web 的 repository 介面定義 |
-| **UI 設計 (Figma)** | 🔄 **進行中** | 依 `screens/` 畫面規格繪製設計稿 |
-| **硬體採購** | 🔄 **進行中** | 依 `hardware/硬體規格書.md` 採購 |
-| 實作 | ⏳ 未開始 | 各平台 repository 介面已就緒,可立即開發 |
+| **UI/UX 設計 (Figma)** | 🔄 **調整中** | 設計稿已繪製，依 `screens/` 畫面規格持續調整 UI/UX |
+| 硬體採購 | ✅ 完成 | 依 `hardware/硬體規格書.md` 採購完畢 |
+| **後端實作** | 🔄 **進行中** | 7 個微服務開始實作 |
+| 前端 / App 實作 | ⏳ 未開始 | Web / iOS / Android repository 介面已就緒 |
+| **硬體實作** | 🔄 **進行中** | 依硬體規格書組裝與開發 |
 | 測試 | ⏳ 未開始 | - |
 | 部署 | ⏳ 未開始 | - |
 
@@ -84,7 +89,7 @@ pet_camera/
 
 ## 快速開始
 
-目前專案尚未進入實作階段，尚無可執行的應用程式。介面合約位於 `interfaces/`，作為未來各平台實作時的唯一資料來源。
+後端服務正在實作中，尚無可完整執行的應用程式。介面合約位於 `interfaces/`，作為各平台實作時的唯一資料來源；資料庫 schema 與 migration 位於 `db/`。
 
 ## 文件導覽
 

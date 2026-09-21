@@ -1,0 +1,50 @@
+# VM-1 / VM-2 的 upstream(14_API閘道與路由規範.md 第 2、5 節)。
+# 本機為主、另一台為 backup。PEER_HOST:VM-1 填 vm2.internal,VM-2 填 vm1.internal。
+
+upstream auth {
+    server 127.0.0.1:23921 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23921 backup;
+    keepalive 8;
+}
+
+upstream device {
+    server 127.0.0.1:23922 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23922 backup;
+    keepalive 8;
+}
+
+upstream event {
+    server 127.0.0.1:23923 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23923 backup;
+    keepalive 8;
+}
+
+upstream push {
+    server 127.0.0.1:23924 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23924 backup;
+    keepalive 8;
+}
+
+upstream media {
+    server 127.0.0.1:23925 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23925 backup;
+    keepalive 8;
+}
+
+upstream album {
+    server 127.0.0.1:23926 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23926 backup;
+    keepalive 8;
+}
+
+upstream stream {
+    server 127.0.0.1:23927 max_fails=1 fail_timeout=10s;
+    server ${PEER_HOST}:23927 backup;
+    keepalive 8;
+}
+
+# 單例,沒有 backup。
+upstream worker {
+    server vm3.internal:23931;
+    keepalive 4;
+}

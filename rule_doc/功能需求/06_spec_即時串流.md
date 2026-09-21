@@ -58,7 +58,7 @@ Session 存於 Redis(`stream:session:{session_id}`),TTL **300 秒**;另存
 
 - `username = "{expiry_unix_ts}:{session_id}"`,`expiry` 為簽發時間 + **600 秒**
 - `credential = base64(HMAC_SHA1(TURN_STATIC_SECRET, username))`
-- `urls` 由設定檔提供(TURN server 為單例,固定在 VM-3,見 `13_ADR_微服務與三節點部署.md`)
+- `urls` 由設定檔提供,內容固定為 `14_API閘道與路由規範.md` 第 2.1 節列出的三筆(TURN server 為單例,固定在 VM-3,見 `13_ADR_微服務與三節點部署.md`)
 
 密鑰以環境變數 `TURN_STATIC_SECRET` 注入,不進版控。憑證有效期(600s)刻意長於 session
 TTL(300s),因此不會出現「session 還在、但 TURN 憑證先過期」的狀態。
@@ -75,7 +75,7 @@ TTL(300s),因此不會出現「session 還在、但 TURN 憑證先過期」的�
 | GET | `/devices/{device_id}/stream/candidates?session_id=&since=` | 取回鏡頭端 ICE candidate |
 | DELETE | `/devices/{device_id}/stream/session/{session_id}` | 結束 session(冪等,一律 204) |
 
-### 3.2 鏡頭端(內部路由,不對公網開放)
+### 3.2 鏡頭端(`/internal` 前綴,經 Load Balancer 對公網開放,以裝置憑證把關)
 
 原規格第 2.1 節要求「前端與鏡頭端透過 Backend 交換 SDP offer/answer、ICE candidate」,
 但原 API 表只有觀看端。以下補齊鏡頭端那一半,否則 signaling 不成立:
