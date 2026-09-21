@@ -27,6 +27,10 @@
 
 破壞性操作,需二次確認對話框。確認後依 `01_資料模型與儲存規格.md` 第 6 節,刪除該裝置所有事件紀錄與 R2 影片/縮圖,裝置狀態重置為 `pending` 並清空 `user_id`。
 
+事件紀錄與 R2 物件的刪除由本服務呼叫 Event 服務的內部端點
+`DELETE /internal/devices/{device_id}/events` 完成(見 `08_spec_時間軸與事件歷史.md`
+第 3.3 節):`events` 表屬於 Event 服務,R2 key 也需要 `event_id` 才組得出來。
+
 ## 3. API 介面
 
 | Method | Path | 說明 |
@@ -34,6 +38,20 @@
 | GET | `/devices` | 取得使用者已配對的裝置列表 |
 | PATCH | `/devices/{device_id}` | 重新命名裝置 |
 | DELETE | `/devices/{device_id}` | 移除裝置(連同事件與影片一併刪除) |
+| GET | `/internal/devices/{device_id}` | **內部**:供 Event、Push 等服務取得裝置擁有者與名稱 |
+
+`/devices/{device_id}/events` 不屬於本服務,由 **Event 服務**提供,Load Balancer 的分流
+規則見 `08_spec_時間軸與事件歷史.md` 第 3.1 節。
+
+`GET /internal/devices/{device_id}` 以 `X-Internal-Api-Key` 把關,回傳該裝置的 `id`、
+`name`、`user_id` 與 `status`,供其他服務做擁有者驗證與顯示(`events` 沒有 `user_id`,
+Event 服務必須問 Device 才知道某個裝置是誰的,見 `08_spec_時間軸與事件歷史.md` 第 3.2 節;
+Push 服務另外需要 `name` 組通知標題,見 `09_spec_推播通知.md` 第 2.1 節)。
+不回傳 `pairing_code` 等配對憑證。`user_id` 為 `null` 代表裝置未配對或已解除配對,
+呼叫端據此自行決定行為(Event 回 404、Push 捨棄通知)。
+| DELETE | `/internal/users/{user_id}/devices` | **內部**:Auth 服務刪除帳號時串聯清除該帳號名下所有裝置,見 `01_資料模型與儲存規格.md` 第 6 節 |
+
+`DELETE /internal/users/{user_id}/devices` 對該帳號名下每一台裝置執行與 `DELETE /devices/{device_id}` 相同的移除邏輯(刪除該裝置的 `events` 與對應 R2 物件、`devices` 重置為 `pending` 並清空 `user_id`),名下沒有裝置時視為成功。此端點必須**冪等**:Auth 重試時重複呼叫不得失敗。內部端點只走 VCN 私有網路、不經 Load Balancer(見 `13_ADR_微服務與三節點部署.md` 第 1 節),另以共享金鑰標頭 `X-Internal-Api-Key` 把關。
 
 ## 4. 讀取狀態
 

@@ -17,13 +17,15 @@
 
 | 服務 | 涵蓋 F-number | 擁有的資料表 |
 |---|---|---|
-| Auth | F0.1(登入註冊密碼重設)+ F0.4(帳號設定) | `users`、`refresh_tokens` |
+| Auth | F0.1(登入註冊密碼重設)+ F0.4(帳號設定) | `users`、`refresh_tokens`、`oauth_identities`、`password_reset_tokens` |
 | Device | F0.2(裝置配對)+ F0.3(裝置管理) | `devices` |
 | Event | F2(事件偵測,背景 worker,不對外提供 API)+ F3(時間軸讀取 API) | `events` |
 | Stream 訊令 | F1 | 無(session 狀態存於共用 Redis,見第 1.1 節與 `interfaces/backend/stream/`) |
 | Push | F4 | `push_tokens` |
 | Media | F5 | `media_items`(擁有者,負責寫入) |
-| Album | F6 | 讀取/管理 `media_items`(與 Media 共用同一張表,見下方說明) |
+| Album | F6 | `google_drive_credentials`;讀取/管理 `media_items`(與 Media 共用同一張表,見下方說明) |
+
+`oauth_identities`(第三方登入身分綁定)與 `password_reset_tokens`(密碼重設一次性 token)同樣歸 Auth 擁有:兩者的生命週期都由 `02_spec_登入註冊與密碼重設.md` 的登入與密碼流程驅動,沒有第二個服務會寫入。注意 `oauth_identities` 與 Album 擁有的 `google_drive_credentials` 是不同概念(登入身分 vs. Drive 匯出授權),不可混用,見 `01_資料模型與儲存規格.md` 第 2.8 節。
 
 F0.4(帳號設定)併入 Auth 服務,而非獨立成一個服務——兩者都是對 `users` 表的操作(密碼雜湊驗證、帳號生命週期),拆開會變成兩個服務搶同一張表的寫入權,沒有實質邊界效益。
 
@@ -106,7 +108,7 @@ Load Balancer 不涵蓋 Postgres、事件偵測 worker、TURN server——這三
 | Device | 拒絕配對/重新命名/移除等寫入操作;裝置列表若有快取可降級顯示 | 寫入選 C,唯讀列表可選 A(顯示「資料可能非最新」) |
 | Stream 訊令 | 拒絕建立新的直播 session(需要查詢裝置狀態與寫入 session 記錄) | 一致性(C)——連線失敗比連到錯誤的裝置狀態安全 |
 | Event | 時間軸查詢失敗時,回傳錯誤而非空列表(避免使用者誤以為沒有事件);背景 worker 與 Postgres 同機(VM-3),寫入不經過網路,不受此處的跨機分區影響——worker 只在 Postgres 本身不可用時才本機重試 | 讀選 C(寧可顯示錯誤,不可顯示假的空結果),worker 寫入選 A(重試) |
-| Push | 若當下無法查出使用者的 push token 清單,延後重試,不立即失敗 | 可用性(A)——推播晚到比整個請求失敗合理 |
+| Push | **發送路徑**(查詢 push token 清單):延後重試,不立即失敗。**註冊路徑**(`PUT`/`DELETE /push-tokens`,寫入 Postgres):拒絕並回 `SRV_002` | 發送選可用性(A)——推播晚到比整個請求失敗合理;註冊選一致性(C),依本節通則「會寫入 Postgres 的操作一律選 C」(`09_spec_推播通知.md` 審查 #12) |
 | Media | 拒絕新的剪輯/截圖請求(需要寫入 media_items) | 一致性(C)——避免產生無法追蹤來源的孤兒檔案 |
 | Album | 唯讀列表可用快取降級顯示;刪除/匯出等寫入操作拒絕 | 讀選 A,寫選 C |
 
