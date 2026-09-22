@@ -1,0 +1,67 @@
+[project]
+name = "auth"
+version = "0.1.0"
+description = "Pet Camera Auth 服務(F0.1:登入註冊與密碼重設;F0.4:帳號設定)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "redis>=5.2",
+    "httpx>=0.28",
+    "pyjwt>=2.10",
+    "bcrypt>=4.2",
+    "uuid6>=2024.7.10",
+    "anyio>=4.15.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "aiosqlite>=0.20",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+# 從 fastapi-master skill 原樣帶進來的分層檢查腳本,不做格式改寫
+extend-exclude = ["tools/check_layers.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S"]
+# UP042 建議改用 StrEnum,但七個服務的 interfaces/backend/*/__init__.py 契約
+# 一律是 (str, Enum),為了跨服務一致不改。
+ignore = ["UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+# 測試裡的假密碼與斷言不套用 bandit 規則
+"tests/*" = ["S101", "S105", "S106"]
+# 對外契約沿用 interfaces/backend/*/__init__.py 一致的 Optional[...] 寫法
+"__init__.py" = ["UP045"]
+# 設定的預設值與 "Bearer" 這類常數是佔位字串,不是硬編密碼
+"app/core/config.py" = ["S105"]
+"app/domains/*/presentation/schemas.py" = ["S105"]
+"app/main.py" = ["S105"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+# 服務根目錄本身有 __init__.py(對外契約),不設這兩項 mypy 會把 app 當成
+# auth.app,同一份檔案被認成兩個模組
+explicit_package_bases = true
+mypy_path = "."
+
+[tool.coverage.run]
+source = ["app"]
